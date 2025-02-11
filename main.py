@@ -1,43 +1,6 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-import random
+import graph.graph as g
 
-def create_manhattan_graph(n):
-    G = nx.Graph()
-    for i in range(n):
-        for j in range(n):
-            node = (i, j)
-            weight = random.choice([0, 1])  # Assign weight 0 or 1
-            G.add_node(node, weight=weight)
-
-            # Connect valid Manhattan neighbors with weight 1
-            if i > 0:
-                G.add_edge(node, (i - 1, j), weight=1)
-            if j > 0:
-                G.add_edge(node, (i, j - 1), weight=1)
-
-    return G
-
-def visualize_manhattan_graph(G, n):
-    pos = {(i, j): (j, -i) for i in range(n) for j in range(n)}  # Grid layout
-    
-    plt.figure(figsize=(12, 12))
-
-    # Draw edges
-    nx.draw_networkx_edges(G, pos, alpha=0.3, width=0.5)
-
-    # Draw nodes with colors based on weight
-    black_nodes = [node for node in G.nodes if G.nodes[node]['weight'] == 1]
-    white_nodes = [node for node in G.nodes if G.nodes[node]['weight'] == 0]
-
-    nx.draw_networkx_nodes(G, pos, nodelist=black_nodes, node_size=20, node_color='black')
-    nx.draw_networkx_nodes(G, pos, nodelist=white_nodes, node_size=20, node_color='white', edgecolors='black')
-
-    plt.title(f"{n}x{n} Manhattan Graph with Binary Weights")
-    plt.axis("off")
-    plt.show()
-
-# Example: Generate and visualize a Manhattan graph
-n = 60  # Large value
-G = create_manhattan_graph(n)
-visualize_manhattan_graph(G, n)
+if __name__ == "__main__":
+    n = 60
+    G = g.create_manhattan_graph(n)
+    g.visualize_manhattan_graph(G, n)
