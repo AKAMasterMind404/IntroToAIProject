@@ -9,7 +9,7 @@ class ManhattanGraph:
         self.G = self.create_manhattan_graph()
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
-        self.path = self.compute_path()
+        self.path = None # self.compute_path()
 
     def create_manhattan_graph(self):
         """Creates an NXN Manhattan graph with all nodes having weight = 0 (no obstacles)."""
@@ -17,7 +17,7 @@ class ManhattanGraph:
         for i in range(self.n):
             for j in range(self.n):
                 node = (i, j)
-                G.add_node(node, weight=0)  # Initialize all nodes as walkable
+                G.add_node(node, weight=1)  # Initialize all nodes as walkable
 
                 # Connect Manhattan neighbors
                 if i > 0:
@@ -25,7 +25,46 @@ class ManhattanGraph:
                 if j > 0:
                     G.add_edge(node, (i, j - 1), weight=1)
 
+        G = self._open_ship_cells(G, self.n)    
         return G
+    
+    def _open_ship_cells(G: nx.Graph, n):
+        xCord = random.randint(0, n)
+        yCord = random.randint(0, n)
+        cell_to_open_at_random = (x, y)        
+        G.nodes[cell_to_open_at_random]['weight'] = 0
+
+        multi_neighbour_set:set = set()
+        currently_open:set = set()
+        one_neighbour_set:set = {(xCord+1, yCord),(xCord-1,yCord),(xCord, yCord-1), (xCord, yCord+1)}
+
+        while len(one_neighbour_set) > 0:
+            cell_to_expand = random.choice(one_neighbour_set)
+            print(f"***** Cell to expand is:{cell_to_expand} *****")
+            
+            # Mark currently selected cell as open
+            G.nodes[cell_to_expand]['weight'] = 0
+            currently_open.add(cell_to_expand)
+
+            # Check for eligible and non eligible cells and update respective sets
+            __expand_or_eliminate_cells(cell_to_expand)
+
+        def __expand_or_eliminate_cells(cell: tuple):
+            x,y = cell
+            new_candidates = [(x+1, y),(x-1,y),(x, y-1), (x, y+1)]
+
+            for candidate in new_candidates:
+                inBounds = 0 <= candidate[0] < n and 0 <= candidate[1] < n
+                notOpen = candidate not in currently_open
+                eligibleToOpen = candidate not in multi_neighbour_set
+
+                if inBounds and notOpen and eligibleToOpen:
+                    if candidate in one_neighbour_set:
+                        one_neighbour_set.remove(candidate)
+                        multi_neighbour_set.add(candidate)
+                    else:
+                        one_neighbour_set.add(candidate)
+    
 
     def compute_path(self):
         """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
@@ -80,27 +119,3 @@ def draw_grid(screen, graph):
     screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
 
     pygame.display.flip()  # Update screen
-
-def start_gui(n):
-    """Runs the Pygame event loop."""
-    pygame.init()
-    screen = pygame.display.set_mode(cnt.SCREEN_SIZE)
-    pygame.display.set_caption("Manhattan Grid Progress")
-
-    graph = ManhattanGraph(n)
-    running = True
-
-    while running:
-        draw_grid(screen, graph)  # Draw updated state
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False  # Exit on close
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-
-                # Check if "Progress" button was clicked
-                if cnt.SCREEN_SIZE[0] // 2 - 50 <= x <= cnt.SCREEN_SIZE[0] // 2 + 50 and cnt.SCREEN_SIZE[1] - 40 <= y <= cnt.SCREEN_SIZE[1] - 10:
-                    graph.add_random_obstacle()  # Add obstacle & update path
-
-    pygame.quit()
