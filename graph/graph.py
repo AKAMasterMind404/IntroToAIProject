@@ -4,76 +4,88 @@ import random
 import constants as cnt
 
 class ManhattanGraph:
-    def __init__(self, n):
+    def __init__(self, screen, n):
         self.n = n
-        self.G = self.create_manhattan_graph()
+        self.G = nx.Graph()
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
         self.path = None # self.compute_path()
+        self.screen = screen
 
     def create_manhattan_graph(self):
         """Creates an NXN Manhattan graph with all nodes having weight = 0 (no obstacles)."""
-        G = nx.Graph()
         for i in range(self.n):
             for j in range(self.n):
                 node = (i, j)
-                G.add_node(node, weight=1)  # Initialize all nodes as walkable
-
+                self.G.add_node(node, weight=1) # Initialize all nodes as walkable
                 # Connect Manhattan neighbors
                 if i > 0:
-                    G.add_edge(node, (i - 1, j), weight=1)
+                    self.G.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
-                    G.add_edge(node, (i, j - 1), weight=1)
+                    self.G.add_edge(node, (i, j - 1), weight=1)
 
-        G = self._open_ship_cells(G, self.n)    
-        return G
-    
-    def _open_ship_cells(G: nx.Graph, n):
-        xCord = random.randint(0, n)
-        yCord = random.randint(0, n)
-        cell_to_open_at_random = (x, y)        
-        G.nodes[cell_to_open_at_random]['weight'] = 0
+        self._open_ship_cells()
+        return self.G
+
+    @staticmethod
+    def getEligibleNeighbours(node: tuple, currently_open: set, n: int):
+        x, y = node
+
+        neighbours = []
+        for cX, cY in [(x+1, y),(x-1,y),(x, y-1), (x, y+1)]:
+            if 0 <= cX < n and 0 <= cY < n and (cX,cY) not in currently_open:
+                neighbours.append((cX,cY))
+
+        return neighbours
+
+    def _open_ship_cells(self):
+        n = self.n
+
+        xCord = random.randint(1, n-1)
+        yCord = random.randint(1, n-1)
+        self.G.nodes[(xCord, yCord)]['weight'] = 0
 
         multi_neighbour_set:set = set()
         currently_open:set = set()
-        one_neighbour_set:set = {(xCord+1, yCord),(xCord-1,yCord),(xCord, yCord-1), (xCord, yCord+1)}
+        one_neighbour_set:set = set(self.getEligibleNeighbours((xCord, yCord), currently_open, n))
 
-        while len(one_neighbour_set) > 0:
-            cell_to_expand = random.choice(one_neighbour_set)
+        draw_grid(self.screen, self, n)
+
+        while True:
+            cell_to_expand = random.choice(list(one_neighbour_set))
             print(f"***** Cell to expand is:{cell_to_expand} *****")
-            
+
             # Mark currently selected cell as open
-            G.nodes[cell_to_expand]['weight'] = 0
+            self.G.nodes[cell_to_expand]['weight'] = 0
             currently_open.add(cell_to_expand)
 
             # Check for eligible and non eligible cells and update respective sets
-            __expand_or_eliminate_cells(cell_to_expand)
-
-        def __expand_or_eliminate_cells(cell: tuple):
-            x,y = cell
-            new_candidates = [(x+1, y),(x-1,y),(x, y-1), (x, y+1)]
+            x,y = cell_to_expand
+            new_candidates = self.getEligibleNeighbours((x,y), currently_open, n)
 
             for candidate in new_candidates:
-                inBounds = 0 <= candidate[0] < n and 0 <= candidate[1] < n
-                notOpen = candidate not in currently_open
                 eligibleToOpen = candidate not in multi_neighbour_set
 
-                if inBounds and notOpen and eligibleToOpen:
+                if eligibleToOpen:
                     if candidate in one_neighbour_set:
                         one_neighbour_set.remove(candidate)
                         multi_neighbour_set.add(candidate)
                     else:
                         one_neighbour_set.add(candidate)
-    
+
+            if len(one_neighbour_set) == 0:
+                break
+
+            draw_grid(self.screen, self, n)
 
     def compute_path(self):
         """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
         G_temp = self.G.copy()  # Work on a copy to keep original graph intact
 
         # Remove all edges connected to obstacle nodes (weight = 1)
-        for node in self.G.nodes:
-            if self.G.nodes[node]['weight'] == 1:
-                G_temp.remove_node(node)
+        for u, v in list(G_temp.edges):
+            if self.G.nodes[u]['weight'] == 1 or self.G.nodes[v]['weight'] == 1:
+                G_temp[u][v]['weight'] = float('inf')  # Make it unreachable
 
         try:
             return nx.shortest_path(G_temp, source=self.start, target=self.goal, weight='weight')
@@ -82,18 +94,20 @@ class ManhattanGraph:
 
     def add_random_obstacle(self):
         """Randomly turns one free node into an obstacle (weight=1)."""
-        free_nodes = [node for node in self.G.nodes if self.G.nodes[node]['weight'] == 0 and node not in [self.start, self.goal]]
+        free_nodes = [node for node in self.G.nodes if
+                      self.G.nodes[node]['weight'] == 0 and node not in [self.start, self.goal]]
         if free_nodes:
             obstacle = random.choice(free_nodes)
             self.G.nodes[obstacle]['weight'] = 1
             self.path = self.compute_path()  # Recalculate shortest path
+            draw_grid(self.screen, self, self.n)  # Refresh the grid
 
-def draw_grid(screen, graph):
+def draw_grid(screen, graph, n):
     """Draws the Manhattan grid using Pygame."""
     screen.fill(cnt.WHITE)  # Clear screen
 
-    for i in range(graph.n):
-        for j in range(graph.n):
+    for i in range(n):
+        for j in range(n):
             x = j * (cnt.CELL_SIZE + cnt.MARGIN)
             y = i * (cnt.CELL_SIZE + cnt.MARGIN)
 
