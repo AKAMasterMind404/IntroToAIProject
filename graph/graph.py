@@ -3,133 +3,110 @@ import networkx as nx
 import random
 import constants as cnt
 
+
 class ManhattanGraph:
     def __init__(self, screen, n):
         self.n = n
         self.G = nx.Graph()
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
-        self.path = None # self.compute_path()
+        self.path = None
         self.screen = screen
+        self.current_step = "Ship Expansion"
+        self.one_neighbour_set = set()
+        self.currently_open = set()
+        self.multi_neighbour_set = set()
+        self.dead_ends = []
+        self.step = 1  # Track algorithm step
+        self.open_ship_initialized = False
 
     def create_manhattan_graph(self):
-        """Creates an NXN Manhattan graph with all nodes having weight = 0 (no obstacles)."""
         for i in range(self.n):
             for j in range(self.n):
                 node = (i, j)
-                self.G.add_node(node, weight=1) # Initialize all nodes as walkable
-                # Connect Manhattan neighbors
+                self.G.add_node(node, weight=1)
                 if i > 0:
                     self.G.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
                     self.G.add_edge(node, (i, j - 1), weight=1)
+        draw_grid(self.screen, self, self.n)
 
-        self._open_ship_cells()
-        return self.G
-
-    @staticmethod
-    def getEligibleNeighbours(node: tuple, currently_open: set, n: int):
-        x, y = node
-
-        neighbours = []
-        for cX, cY in [(x+1, y),(x-1,y),(x, y-1), (x, y+1)]:
-            if 0 <= cX < n and 0 <= cY < n and (cX,cY) not in currently_open:
-                neighbours.append((cX,cY))
-
-        return neighbours
-
-    def _open_ship_cells(self):
-        n = self.n
-
-        xCord = random.randint(1, n-1)
-        yCord = random.randint(1, n-1)
+    def initialize_ship_opening(self):
+        xCord = random.randint(1, self.n - 2)
+        yCord = random.randint(1, self.n - 2)
         self.G.nodes[(xCord, yCord)]['weight'] = 0
+        self.currently_open.add((xCord, yCord))
+        self.one_neighbour_set = set(self.getEligibleNeighbours((xCord, yCord)))
+        self.open_ship_initialized = True
+        draw_grid(self.screen, self, self.n)
 
-        multi_neighbour_set:set = set()
-        currently_open:set = set()
-        one_neighbour_set:set = set(self.getEligibleNeighbours((xCord, yCord), currently_open, n))
+    def getEligibleNeighbours(self, node):
+        x, y = node
+        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
+        return [(cX, cY) for cX, cY in neighbours if
+                0 <= cX < self.n and 0 <= cY < self.n and (cX, cY) not in self.currently_open]
 
-        draw_grid(self.screen, self, n)
-
-        while True:
-            cell_to_expand = random.choice(list(one_neighbour_set))
-            print(f"***** Cell to expand is:{cell_to_expand} *****")
-
-            # Mark currently selected cell as open
+    def proceed(self):
+        if self.step == 1 and self.one_neighbour_set:
+            cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.G.nodes[cell_to_expand]['weight'] = 0
-            currently_open.add(cell_to_expand)
-
-            # Check for eligible and non eligible cells and update respective sets
-            x,y = cell_to_expand
-            new_candidates = self.getEligibleNeighbours((x,y), currently_open, n)
-
+            self.currently_open.add(cell_to_expand)
+            self.one_neighbour_set.remove(cell_to_expand)
+            new_candidates = self.getEligibleNeighbours(cell_to_expand)
             for candidate in new_candidates:
-                eligibleToOpen = candidate not in multi_neighbour_set
-
-                if eligibleToOpen:
-                    if candidate in one_neighbour_set:
-                        one_neighbour_set.remove(candidate)
-                        multi_neighbour_set.add(candidate)
+                if candidate not in self.multi_neighbour_set:
+                    if candidate in self.one_neighbour_set:
+                        self.one_neighbour_set.remove(candidate)
+                        self.multi_neighbour_set.add(candidate)
                     else:
-                        one_neighbour_set.add(candidate)
+                        self.one_neighbour_set.add(candidate)
+            if not self.one_neighbour_set:
+                self.step = 2  # Move to dead-end detection
+                self.current_step = "Identifying Dead Ends"
+            draw_grid(self.screen, self, self.n)
 
-            if len(one_neighbour_set) == 0:
-                break
+        elif self.step == 2:
+            self.dead_ends = [node for node in self.currently_open if sum(
+                1 for neighbor in self.getEligibleNeighbours(node) if self.G.nodes[neighbor]['weight'] == 0) == 1]
+            self.step = 3  # Move to dead-end expansion
+            self.current_step = "Expanding Dead Ends"
+            draw_grid(self.screen, self, self.n)
 
-            draw_grid(self.screen, self, n)
+        elif self.step == 3 and self.dead_ends:
+            num_to_expand = len(self.dead_ends) // 2
+            random.shuffle(self.dead_ends)
+            for i in range(num_to_expand):
+                dead_end = self.dead_ends[i]
+                closed_neighbors = [neighbor for neighbor in self.getEligibleNeighbours(dead_end) if
+                                    self.G.nodes[neighbor]['weight'] == 1]
+                if closed_neighbors:
+                    to_open = random.choice(closed_neighbors)
+                    self.G.nodes[to_open]['weight'] = 0
+                    self.currently_open.add(to_open)
+            self.step = 4
+            self.current_step = "Algorithm Complete"
+            draw_grid(self.screen, self, self.n)
 
-    def compute_path(self):
-        """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
-        G_temp = self.G.copy()  # Work on a copy to keep original graph intact
-
-        # Remove all edges connected to obstacle nodes (weight = 1)
-        for u, v in list(G_temp.edges):
-            if self.G.nodes[u]['weight'] == 1 or self.G.nodes[v]['weight'] == 1:
-                G_temp[u][v]['weight'] = float('inf')  # Make it unreachable
-
-        try:
-            return nx.shortest_path(G_temp, source=self.start, target=self.goal, weight='weight')
-        except nx.NetworkXNoPath:
-            return None
-
-    def add_random_obstacle(self):
-        """Randomly turns one free node into an obstacle (weight=1)."""
-        free_nodes = [node for node in self.G.nodes if
-                      self.G.nodes[node]['weight'] == 0 and node not in [self.start, self.goal]]
-        if free_nodes:
-            obstacle = random.choice(free_nodes)
-            self.G.nodes[obstacle]['weight'] = 1
-            self.path = self.compute_path()  # Recalculate shortest path
-            draw_grid(self.screen, self, self.n)  # Refresh the grid
 
 def draw_grid(screen, graph, n):
-    """Draws the Manhattan grid using Pygame."""
-    screen.fill(cnt.WHITE)  # Clear screen
+    screen.fill(cnt.WHITE)
+    font = pygame.font.SysFont(None, 30)
+    text = font.render(graph.current_step, True, cnt.BLACK)
+    screen.blit(text, (20, 10))
 
     for i in range(n):
         for j in range(n):
             x = j * (cnt.CELL_SIZE + cnt.MARGIN)
-            y = i * (cnt.CELL_SIZE + cnt.MARGIN)
-
+            y = i * (cnt.CELL_SIZE + cnt.MARGIN) + 40
             node = (i, j)
-            color = cnt.WHITE  # Default is walkable
-
-            if graph.G.nodes[node]['weight'] == 1:
-                color = cnt.BLACK  # Obstacle
-            elif node == graph.start:
-                color = cnt.YELLOW  # Start
-            elif node == graph.goal:
-                color = cnt.RED  # Goal
-            elif graph.path and node in graph.path:
-                color = cnt.GREEN  # Shortest Path
-
+            color = cnt.WHITE if graph.G.nodes[node]['weight'] == 0 else cnt.BLACK
+            if node in graph.one_neighbour_set:
+                color = cnt.YELLOW
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
-            pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)  # Grid outline
+            pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
 
-    # Draw the progress button
     pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
     font = pygame.font.SysFont(None, 24)
-    text = font.render("Progress", True, cnt.WHITE)
+    text = font.render("Proceed", True, cnt.WHITE)
     screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
-
-    pygame.display.flip()  # Update screen
+    pygame.display.flip()
