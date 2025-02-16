@@ -1,6 +1,9 @@
 import pygame
 import networkx as nx
 import random
+
+from networkx.classes import neighbors
+
 import constants as cnt
 
 
@@ -40,11 +43,24 @@ class ManhattanGraph:
         self.open_ship_initialized = True
         draw_grid(self.screen, self, self.n)
 
+    def isNodeIsolated(self, node: tuple):
+        x,y = node
+        neighbors = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
+
+        isOpenCount = 0
+        for nX, nY in neighbors:
+            node = self.G.nodes[(nX,nY)]
+            if node['weight'] == 0:
+                isOpenCount += 1
+
+        if isOpenCount == 1:
+            return True
+
     def getEligibleNeighbours(self, node):
         x, y = node
         neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
         return [(cX, cY) for cX, cY in neighbours if
-                0 <= cX < self.n and 0 <= cY < self.n and (cX, cY) not in self.currently_open]
+                0 < cX < self.n - 1 and 0 < cY < self.n - 1 and (cX, cY) not in self.currently_open]
 
     def proceed(self):
         if self.step == 1 and self.one_neighbour_set:
@@ -66,8 +82,7 @@ class ManhattanGraph:
             draw_grid(self.screen, self, self.n)
 
         elif self.step == 2:
-            self.dead_ends = [node for node in self.currently_open if sum(
-                1 for neighbor in self.getEligibleNeighbours(node) if self.G.nodes[neighbor]['weight'] == 0) == 1]
+            self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
             self.current_step = "Expanding Dead Ends"
             draw_grid(self.screen, self, self.n)
@@ -99,14 +114,29 @@ def draw_grid(screen, graph, n):
             x = j * (cnt.CELL_SIZE + cnt.MARGIN)
             y = i * (cnt.CELL_SIZE + cnt.MARGIN) + 40
             node = (i, j)
-            color = cnt.WHITE if graph.G.nodes[node]['weight'] == 0 else cnt.BLACK
+
+            if graph.G.nodes[node]['weight'] == 0:
+                color = cnt.WHITE  # Open path
+            else:
+                color = cnt.BLACK  # Closed path
+
             if node in graph.one_neighbour_set:
-                color = cnt.YELLOW
+                color = cnt.YELLOW  # Cells that can be expanded next
+
+            if node in graph.dead_ends and graph.step < 4:
+                color = cnt.RED  # Dead-end cells (Step 2)
+
+            if node in graph.currently_open and (node not in graph.dead_ends and graph.step < 3):
+                color = cnt.GREEN  # Newly opened cells from dead-end expansion
+
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
 
+    # Draw "Proceed" button
     pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
     font = pygame.font.SysFont(None, 24)
     text = font.render("Proceed", True, cnt.WHITE)
     screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
+
     pygame.display.flip()
+

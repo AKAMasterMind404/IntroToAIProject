@@ -6,7 +6,7 @@ if __name__ == "__main__":
     pygame.init()
     screen = pygame.display.set_mode(cnt.SCREEN_SIZE)
     pygame.display.set_caption("The Bot is on Fire!")
-    graph = g.ManhattanGraph(screen, 4)
+    graph = g.ManhattanGraph(screen, 5)
     graph.create_manhattan_graph()
 
     running = True
@@ -21,5 +21,5 @@ if __name__ == "__main__":
                     if not graph.open_ship_initialized:
                         graph.initialize_ship_opening()
                     else:
-                        graph.proceed()
+                        [graph.proceed() for _ in range(1)]
     pygame.quit()
