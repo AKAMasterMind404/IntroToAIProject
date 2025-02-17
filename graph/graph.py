@@ -12,6 +12,7 @@ class ManhattanGraph:
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
         self.path = None
+        self.canProceed = True
         self.screen = screen
         self.current_step = "Ship Expansion"
         self.one_neighbour_set = set()
@@ -153,9 +154,9 @@ class ManhattanGraph:
                 if self.isButtonPressed():
                     print("The Fire Has been Extinguished!")
                     self.current_step = "The Fire Has been Extinguished!"
-                    draw_grid(self.screen, self, self.n)
                 else:
                     self._spreadFire()
+                draw_grid(self.screen, self, self.n)
             '''
             • The bot decides which open neighbor to move to.
             • The bot moves to that neighbor.
@@ -316,7 +317,9 @@ def draw_grid(screen, game, n):
 
     # Draw "Proceed" button
     pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
-    text = font.render("Proceed", True, cnt.WHITE)
+    message =  "Proceed" if game.canProceed else "Loading ..."
+    if game.game_over: message = "Restart"
+    text = font.render(message, True, cnt.WHITE)
     screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
 
     pygame.display.flip()

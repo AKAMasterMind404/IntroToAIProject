@@ -1,6 +1,7 @@
-FIRE_RESISTANCE_QUOTIENT = 0 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
+FIRE_RESISTANCE_QUOTIENT = 4 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
+TIME_RATE = 0.8 # SECONDS OF WAIT BETWEEN EACH T
 
-GRID_SIZE = 40  # Default value, will update dynamically
+GRID_SIZE = 10  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
 HEADER_HEIGHT = 50  # Space for text and buttons
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800  # Default window size
@@ -12,7 +13,7 @@ YELLOW = (255, 255, 0)
 RED = (255, 0, 0)
 ORANGE = (255, 165, 0)
 D1_ORANGE = (255, 140, 0)
-D2_ORANGE = (255, 255, 0)
+D2_ORANGE = (255, 120, 0)
 D3_ORANGE = (255, 100, 0)
 GREEN = (0, 255, 0)
 GRAY = (200, 200, 200)

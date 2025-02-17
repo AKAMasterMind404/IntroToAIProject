@@ -33,11 +33,24 @@ if __name__ == "__main__":
                     if not graph.open_ship_initialized:
                         graph.initialize_ship_opening()
                     else:
-                        if not graph.game_over:
+                        if not graph.canProceed:
+                            print("Wait for the action to be complete!")
+                            pass
+                        if graph.game_over:
+                            graph = g.ManhattanGraph(screen, cnt.GRID_SIZE)
+                            graph.create_manhattan_graph()
+                            graph.proceed()
+                        else:
+                            graph.canProceed = False
                             while graph.step == 1:
                                 graph.proceed()
                                 time.sleep(0)
-                            graph.proceed()
+                            while graph.step == 5 and not graph.game_over:
+                                graph.proceed()
+                                time.sleep(cnt.TIME_RATE)
+                            else:
+                                graph.proceed()
+                            graph.canProceed = True
 
         g.draw_grid(screen, graph, cnt.GRID_SIZE)
 
