@@ -2,8 +2,6 @@ import pygame
 import networkx as nx
 import random
 
-from networkx.classes import neighbors
-
 import constants as cnt
 
 
@@ -112,31 +110,27 @@ def draw_grid(screen, graph, n):
     for i in range(n):
         for j in range(n):
             x = j * (cnt.CELL_SIZE + cnt.MARGIN)
-            y = i * (cnt.CELL_SIZE + cnt.MARGIN) + 40
+            y = i * (cnt.CELL_SIZE + cnt.MARGIN) + cnt.HEADER_HEIGHT
             node = (i, j)
 
             if graph.G.nodes[node]['weight'] == 0:
-                color = cnt.WHITE  # Open path
+                color = cnt.WHITE
             else:
-                color = cnt.BLACK  # Closed path
+                color = cnt.BLACK
 
             if node in graph.one_neighbour_set:
-                color = cnt.YELLOW  # Cells that can be expanded next
-
+                color = cnt.YELLOW
             if node in graph.dead_ends and graph.step < 4:
-                color = cnt.RED  # Dead-end cells (Step 2)
-
+                color = cnt.RED
             if node in graph.currently_open and (node not in graph.dead_ends and graph.step < 3):
-                color = cnt.GREEN  # Newly opened cells from dead-end expansion
+                color = cnt.GREEN
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
 
     # Draw "Proceed" button
     pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
-    font = pygame.font.SysFont(None, 24)
     text = font.render("Proceed", True, cnt.WHITE)
     screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
 
     pygame.display.flip()
-
