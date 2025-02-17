@@ -243,8 +243,8 @@ class ManhattanGraph:
         return newFireDict
 
     def _calculateFireProbablity(self, neighbours):
-        q = 0.6
-        probablity =  math.pow(1 - (1 - q), neighbours)
+        q = cnt.FIRE_RESISTANCE_QUOTIENT
+        probablity =  1 - math.pow(1 - q, neighbours)
         return probablity
 
 def draw_grid(screen, game, n):

@@ -1,4 +1,4 @@
-import pygame
+FIRE_RESISTANCE_QUOTIENT = 0 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
 
 GRID_SIZE = 20  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
