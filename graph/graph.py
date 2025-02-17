@@ -22,7 +22,22 @@ class ManhattanGraph:
         self.fire_nodes = set()
         self.nodes_with_burning_neighbours = dict()
         self.curr_bot_pos = None
+        self.initial_fire_position = None
         self.curr_button_pos = None
+
+    def compute_path(self):
+        """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
+        G_temp = self.Ship.copy()  # Work on a copy to keep original graph intact
+
+        # Remove all edges connected to obstacle nodes (weight = 1)
+        for node in self.Ship.nodes:
+            if self.Ship.nodes[node]['weight'] == 1:
+                G_temp.remove_node(node)
+
+        try:
+            return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
+        except nx.NetworkXNoPath:
+            return None
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -113,6 +128,7 @@ class ManhattanGraph:
 
             fire_square = random.choice(opened_nodes)
             opened_nodes.remove(fire_square)
+            self.initial_fire_position = fire_square
             self.fire_nodes.add(fire_square)
             self.nodes_with_burning_neighbours = self._findPotentialNeighbours(fire_square, self.nodes_with_burning_neighbours)
 
@@ -133,8 +149,12 @@ class ManhattanGraph:
             else:
                 # The Task
                 self._moveBot()
-                self.checkIfButtonIsPressed()
-                self._spreadFire()
+                if self.isButtonPressed():
+                    print("The Fire Has been Extinguished!")
+                    self.current_step = "The Fire Has been Extinguished!"
+                    draw_grid(self.screen, self, self.n)
+                else:
+                    self._spreadFire()
             '''
             • The bot decides which open neighbor to move to.
             • The bot moves to that neighbor.
@@ -145,10 +165,45 @@ class ManhattanGraph:
             pass
 
     def _moveBot(self):
-        pass
+        bot_type = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+        if bot_type == 1:
+            self._moveBot1()
 
-    def checkIfButtonIsPressed(self):
-        pass
+    def _moveBot1(self):
+        # Recalculate path only if it's None
+        if self.path is None:
+            self.path = self.compute_path()
+
+        # If no valid path exists, stop
+        if not self.path or len(self.path) == 0:
+            return
+
+        # Move to the next step in the path
+        next_pos = self.path.pop(0)
+        self.curr_bot_pos = next_pos
+
+    def calculate_path_for_bot1(self):
+        """
+        Finds a path from the bot's current position to the button, avoiding fire nodes.
+        """
+        if self.curr_bot_pos is None or self.curr_button_pos is None:
+            return []
+
+        # Create a copy of the graph excluding fire nodes
+        safe_graph = self.Ship.copy()
+        for node in self.fire_nodes | {self.initial_fire_position}:
+            if safe_graph.has_node(node):
+                safe_graph.remove_node(node)
+
+        # Compute the shortest path avoiding fire
+        try:
+            path = nx.shortest_path(safe_graph, source=self.curr_bot_pos, target=self.curr_button_pos)
+            return path[1:]  # Exclude the starting position
+        except nx.NetworkXNoPath:
+            return []  # No valid path available
+
+    def isButtonPressed(self):
+        return self.curr_button_pos == self.curr_bot_pos
 
     def _spreadFire(self):
         newFireyDict = self.nodes_with_burning_neighbours.copy()
@@ -221,6 +276,8 @@ def draw_grid(screen, game, n):
                 color = cnt.BLUE
             if node == game.curr_button_pos:
                 color = cnt.GREEN
+            if node in (game.path or []):
+                color = cnt.YELLOW
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
