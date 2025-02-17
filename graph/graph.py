@@ -167,7 +167,7 @@ class ManhattanGraph:
             pass
 
     def _moveBot(self):
-        bot_type = 2 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+        bot_type = cnt.CURRENT_BOT
         if bot_type == 1:
             self._moveBot1()
         elif bot_type == 2:
@@ -202,7 +202,6 @@ class ManhattanGraph:
         if not self.path or len(self.path) == 0:
             return
 
-        itrx = self.fire_nodes.intersection(set(self.path))
         # Move to the next step in the path
         next_pos = self.path.pop(0)
         self.curr_bot_pos = next_pos
