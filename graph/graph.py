@@ -20,6 +20,9 @@ class ManhattanGraph:
         self.dead_ends = []
         self.step = 1  # Track algorithm step
         self.open_ship_initialized = False
+        self.fire_nodes = set()
+        self.curr_bot_pos = None
+        self.curr_button_pos = None
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -99,6 +102,24 @@ class ManhattanGraph:
             self.step = 4
             self.current_step = "Algorithm Complete"
             draw_grid(self.screen, self, self.n)
+        elif self.step == 4:
+            opened_nodes = list(self.currently_open)
+
+            fire_square = random.choice(opened_nodes)
+            self.fire_nodes.add(fire_square)
+            opened_nodes.remove(fire_square)
+
+            bot_square = random.choice(opened_nodes)
+            self.curr_bot_pos = bot_square
+            opened_nodes.remove(bot_square)
+
+            button_square = random.choice(opened_nodes)
+            self.curr_button_pos = button_square
+
+            draw_grid(self.screen, self, self.n)
+            self.step = 5
+        elif self.step == 5:
+            pass
 
 
 def draw_grid(screen, graph, n):
@@ -123,6 +144,12 @@ def draw_grid(screen, graph, n):
             if node in graph.dead_ends and graph.step < 4:
                 color = cnt.RED
             if node in graph.currently_open and (node not in graph.dead_ends and graph.step < 3):
+                color = cnt.GREEN
+            if node in graph.fire_nodes:
+                color = cnt.RED
+            if node == graph.curr_bot_pos:
+                color = cnt.BLUE
+            if node == graph.curr_button_pos:
                 color = cnt.GREEN
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))

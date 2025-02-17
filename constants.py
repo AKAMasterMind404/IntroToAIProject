@@ -1,6 +1,6 @@
 import pygame
 
-GRID_SIZE = 60  # Default value, will update dynamically
+GRID_SIZE = 20  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
 HEADER_HEIGHT = 50  # Space for text and buttons
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800  # Default window size
