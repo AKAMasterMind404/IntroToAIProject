@@ -7,6 +7,7 @@ import constants as cnt
 class ManhattanGraph:
     def __init__(self, screen, n):
         self.n = n
+        self.game_over = False
         self.Ship = nx.Graph()
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
@@ -143,6 +144,7 @@ class ManhattanGraph:
             self.step = 5
         elif self.step == 5:
             if not self._checkIfButtonOrBotCaughtFire():
+                self.game_over = True
                 draw_grid(self.screen, self, self.n)
                 print("Cannot Proceed!")
             else:
@@ -180,6 +182,7 @@ class ManhattanGraph:
 
             # Stop moving if no valid path exists
             if not self.path or len(self.path) < 2:
+                self.game_over = True
                 print("❌ No safe path. Bot cannot move.")
                 return
 
@@ -285,6 +288,14 @@ def draw_grid(screen, game, n):
             else:
                 color = cnt.BLACK
 
+            if node in game.nodes_with_burning_neighbours.keys():
+                intensity = game.nodes_with_burning_neighbours[node]
+                if intensity == 1:
+                    color = cnt.ORANGE
+                elif intensity == 2:
+                    color = cnt.D1_ORANGE
+                elif intensity == 3:
+                    color = cnt.D2_ORANGE
             if node in game.one_neighbour_set:
                 color = cnt.YELLOW
             if node in game.dead_ends and game.step < 4:

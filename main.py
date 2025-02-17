@@ -33,10 +33,11 @@ if __name__ == "__main__":
                     if not graph.open_ship_initialized:
                         graph.initialize_ship_opening()
                     else:
-                        while graph.step == 1:
+                        if not graph.game_over:
+                            while graph.step == 1:
+                                graph.proceed()
+                                time.sleep(0)
                             graph.proceed()
-                            time.sleep(0)
-                        graph.proceed()
 
         g.draw_grid(screen, graph, cnt.GRID_SIZE)
 
