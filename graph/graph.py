@@ -1,14 +1,13 @@
+import math
 import pygame
 import networkx as nx
 import random
-
 import constants as cnt
-
 
 class ManhattanGraph:
     def __init__(self, screen, n):
         self.n = n
-        self.G = nx.Graph()
+        self.Ship = nx.Graph()
         self.start = (0, 0)
         self.goal = (n - 1, n - 1)
         self.path = None
@@ -21,6 +20,7 @@ class ManhattanGraph:
         self.step = 1  # Track algorithm step
         self.open_ship_initialized = False
         self.fire_nodes = set()
+        self.nodes_with_burning_neighbours = dict()
         self.curr_bot_pos = None
         self.curr_button_pos = None
 
@@ -28,17 +28,17 @@ class ManhattanGraph:
         for i in range(self.n):
             for j in range(self.n):
                 node = (i, j)
-                self.G.add_node(node, weight=1)
+                self.Ship.add_node(node, weight=1)
                 if i > 0:
-                    self.G.add_edge(node, (i - 1, j), weight=1)
+                    self.Ship.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
-                    self.G.add_edge(node, (i, j - 1), weight=1)
+                    self.Ship.add_edge(node, (i, j - 1), weight=1)
         draw_grid(self.screen, self, self.n)
 
     def initialize_ship_opening(self):
         xCord = random.randint(1, self.n - 2)
         yCord = random.randint(1, self.n - 2)
-        self.G.nodes[(xCord, yCord)]['weight'] = 0
+        self.Ship.nodes[(xCord, yCord)]['weight'] = 0
         self.currently_open.add((xCord, yCord))
         self.one_neighbour_set = set(self.getEligibleNeighbours((xCord, yCord)))
         self.open_ship_initialized = True
@@ -50,12 +50,18 @@ class ManhattanGraph:
 
         isOpenCount = 0
         for nX, nY in neighbors:
-            node = self.G.nodes[(nX,nY)]
+            node = self.Ship.nodes[(nX,nY)]
             if node['weight'] == 0:
                 isOpenCount += 1
 
         if isOpenCount == 1:
             return True
+
+    def getAllOpenNeighbours(self, node):
+        x, y = node
+        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
+        return [(cX, cY) for cX, cY in neighbours if
+                self.n - 1 > 0 < cX and 0 < cY < self.n - 1 and (cX, cY) and self.Ship.nodes[(cX, cY)]['weight'] == 0]
 
     def getEligibleNeighbours(self, node):
         x, y = node
@@ -66,7 +72,7 @@ class ManhattanGraph:
     def proceed(self):
         if self.step == 1 and self.one_neighbour_set:
             cell_to_expand = random.choice(list(self.one_neighbour_set))
-            self.G.nodes[cell_to_expand]['weight'] = 0
+            self.Ship.nodes[cell_to_expand]['weight'] = 0
             self.currently_open.add(cell_to_expand)
             self.one_neighbour_set.remove(cell_to_expand)
             new_candidates = self.getEligibleNeighbours(cell_to_expand)
@@ -94,20 +100,21 @@ class ManhattanGraph:
             for i in range(num_to_expand):
                 dead_end = self.dead_ends[i]
                 closed_neighbors = [neighbor for neighbor in self.getEligibleNeighbours(dead_end) if
-                                    self.G.nodes[neighbor]['weight'] == 1]
+                                    self.Ship.nodes[neighbor]['weight'] == 1]
                 if closed_neighbors:
                     to_open = random.choice(closed_neighbors)
-                    self.G.nodes[to_open]['weight'] = 0
+                    self.Ship.nodes[to_open]['weight'] = 0
                     self.currently_open.add(to_open)
             self.step = 4
-            self.current_step = "Algorithm Complete"
+            self.current_step = "Ship Generation Complete"
             draw_grid(self.screen, self, self.n)
         elif self.step == 4:
             opened_nodes = list(self.currently_open)
 
             fire_square = random.choice(opened_nodes)
-            self.fire_nodes.add(fire_square)
             opened_nodes.remove(fire_square)
+            self.fire_nodes.add(fire_square)
+            self.nodes_with_burning_neighbours = self._findPotentialNeighbours(fire_square, self.nodes_with_burning_neighbours)
 
             bot_square = random.choice(opened_nodes)
             self.curr_bot_pos = bot_square
@@ -116,16 +123,79 @@ class ManhattanGraph:
             button_square = random.choice(opened_nodes)
             self.curr_button_pos = button_square
 
+            self.current_step = "Placed the button, fire and the bot"
             draw_grid(self.screen, self, self.n)
             self.step = 5
         elif self.step == 5:
+            if not self._checkIfButtonOrBotCaughtFire():
+                draw_grid(self.screen, self, self.n)
+                print("Cannot Proceed!")
+            else:
+                # The Task
+                self._moveBot()
+                self.checkIfButtonIsPressed()
+                self._spreadFire()
+            '''
+            • The bot decides which open neighbor to move to.
+            • The bot moves to that neighbor.
+            • If the bot enters the button cell, the button is pressed and the fire is put out - the task is completed.
+            • Otherwise, the fire advances.
+            • If at any point the bot and the fire occupy the same cell, the task is failed.
+            '''
             pass
 
+    def _moveBot(self):
+        pass
 
-def draw_grid(screen, graph, n):
+    def checkIfButtonIsPressed(self):
+        pass
+
+    def _spreadFire(self):
+        newFireyDict = self.nodes_with_burning_neighbours.copy()
+
+        for x,y in newFireyDict.keys():
+            neighbors = self.nodes_with_burning_neighbours[(x,y)]
+            fire_luck = self._calculateFireProbablity(neighbors)
+            willLightUpLuck = random.random()
+
+            isCatchFire = willLightUpLuck > fire_luck
+            if isCatchFire:
+                self.fire_nodes.add((x,y))
+                newFireyDict = self._findPotentialNeighbours((x, y), newFireyDict)
+                self.nodes_with_burning_neighbours = newFireyDict
+
+    def _checkIfButtonOrBotCaughtFire(self):
+        if self.curr_button_pos in self.fire_nodes:
+            print("Game over! The button is on fire")
+            self.current_step = "Game over! The button is on fire"
+            return False
+        if self.curr_bot_pos in self.fire_nodes:
+            self.current_step = "Game over! The Bot is on fire"
+            print("Game over! The Bot is on fire!")
+            return False
+
+        return True
+
+    def _findPotentialNeighbours(self, fireNode: tuple, existingNeighbours: dict):
+        neighbors = self.getAllOpenNeighbours(fireNode)
+
+        newFireDict = existingNeighbours.copy()
+        for x, y in neighbors:
+            node = self.Ship.nodes[(x, y)]
+            if node["weight"] == 0:
+                newFireDict[(x, y)] = newFireDict.get((x,y), 0) + 1
+
+        return newFireDict
+
+    def _calculateFireProbablity(self, neighbours):
+        q = 0.6
+        probablity =  math.pow(1 - (1 - q), neighbours)
+        return probablity
+
+def draw_grid(screen, game, n):
     screen.fill(cnt.WHITE)
     font = pygame.font.SysFont(None, 30)
-    text = font.render(graph.current_step, True, cnt.BLACK)
+    text = font.render(game.current_step, True, cnt.BLACK)
     screen.blit(text, (20, 10))
 
     for i in range(n):
@@ -134,22 +204,22 @@ def draw_grid(screen, graph, n):
             y = i * (cnt.CELL_SIZE + cnt.MARGIN) + cnt.HEADER_HEIGHT
             node = (i, j)
 
-            if graph.G.nodes[node]['weight'] == 0:
+            if game.Ship.nodes[node]['weight'] == 0:
                 color = cnt.WHITE
             else:
                 color = cnt.BLACK
 
-            if node in graph.one_neighbour_set:
+            if node in game.one_neighbour_set:
                 color = cnt.YELLOW
-            if node in graph.dead_ends and graph.step < 4:
+            if node in game.dead_ends and game.step < 4:
                 color = cnt.RED
-            if node in graph.currently_open and (node not in graph.dead_ends and graph.step < 3):
+            if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
                 color = cnt.GREEN
-            if node in graph.fire_nodes:
+            if node in game.fire_nodes:
                 color = cnt.RED
-            if node == graph.curr_bot_pos:
+            if node == game.curr_bot_pos:
                 color = cnt.BLUE
-            if node == graph.curr_button_pos:
+            if node == game.curr_button_pos:
                 color = cnt.GREEN
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
