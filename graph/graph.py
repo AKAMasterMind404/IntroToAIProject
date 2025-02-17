@@ -168,6 +168,20 @@ class ManhattanGraph:
         bot_type = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
         if bot_type == 1:
             self._moveBot1()
+        elif bot_type == 2:
+            self._moveBot2()
+
+    def _moveBot1(self):
+        # Recalculate path only if it's None
+        self.path = self.compute_path()
+
+        # If no valid path exists, stop
+        if not self.path or len(self.path) == 0:
+            return
+
+        # Move to the next step in the path
+        next_pos = self.path.pop(0)
+        self.curr_bot_pos = next_pos
 
     def _moveBot1(self):
         # Recalculate path only if it's None
@@ -270,14 +284,14 @@ def draw_grid(screen, game, n):
                 color = cnt.RED
             if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
                 color = cnt.GREEN
+            if node in (game.path or []):
+                color = cnt.YELLOW
             if node in game.fire_nodes:
                 color = cnt.RED
             if node == game.curr_bot_pos:
                 color = cnt.BLUE
             if node == game.curr_button_pos:
                 color = cnt.GREEN
-            if node in (game.path or []):
-                color = cnt.YELLOW
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
