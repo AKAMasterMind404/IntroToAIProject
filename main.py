@@ -35,7 +35,7 @@ if __name__ == "__main__":
                     else:
                         while graph.step == 1:
                             graph.proceed()
-                            time.sleep(0.0001)
+                            time.sleep(0)
                         graph.proceed()
 
         g.draw_grid(screen, graph, cnt.GRID_SIZE)

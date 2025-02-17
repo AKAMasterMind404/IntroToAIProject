@@ -31,9 +31,8 @@ class ManhattanGraph:
 
         # Remove all edges connected to obstacle nodes (weight = 1)
         for node in self.Ship.nodes:
-            if self.Ship.nodes[node]['weight'] == 1:
+            if self.Ship.nodes[node]['weight'] == 1 or node in self.fire_nodes:
                 G_temp.remove_node(node)
-
         try:
             return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
         except nx.NetworkXNoPath:
@@ -165,23 +164,30 @@ class ManhattanGraph:
             pass
 
     def _moveBot(self):
-        bot_type = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+        bot_type = 2 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
         if bot_type == 1:
             self._moveBot1()
         elif bot_type == 2:
             self._moveBot2()
 
-    def _moveBot1(self):
-        # Recalculate path only if it's None
-        self.path = self.compute_path()
+    def _moveBot2(self):
+        """Moves the bot one step while dynamically avoiding fire."""
 
-        # If no valid path exists, stop
-        if not self.path or len(self.path) == 0:
-            return
+        # Check if the next step is blocked by fire
+        if not self.path or len(self.path) < 2 or self.fire_nodes.intersection(list(self.path)):
+            print("🔥 Fire detected ahead! Recalculating path...")
+            self.path = self.compute_path()
 
-        # Move to the next step in the path
-        next_pos = self.path.pop(0)
-        self.curr_bot_pos = next_pos
+            # Stop moving if no valid path exists
+            if not self.path or len(self.path) < 2:
+                print("❌ No safe path. Bot cannot move.")
+                return
+
+        # Move bot one step forward
+        self.curr_bot_pos = self.path[1]
+        self.path.pop(0)
+
+        print(f"🤖 Bot moved to {self.curr_bot_pos}")
 
     def _moveBot1(self):
         # Recalculate path only if it's None
@@ -192,6 +198,7 @@ class ManhattanGraph:
         if not self.path or len(self.path) == 0:
             return
 
+        itrx = self.fire_nodes.intersection(set(self.path))
         # Move to the next step in the path
         next_pos = self.path.pop(0)
         self.curr_bot_pos = next_pos

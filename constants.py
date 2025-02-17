@@ -1,6 +1,6 @@
 FIRE_RESISTANCE_QUOTIENT = 0 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
 
-GRID_SIZE = 15  # Default value, will update dynamically
+GRID_SIZE = 40  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
 HEADER_HEIGHT = 50  # Space for text and buttons
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800  # Default window size
