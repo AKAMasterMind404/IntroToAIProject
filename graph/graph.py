@@ -178,13 +178,13 @@ class ManhattanGraph:
 
         # Check if the next step is blocked by fire
         if not self.path or len(self.path) < 2 or self.fire_nodes.intersection(list(self.path)):
-            print("🔥 Fire detected ahead! Recalculating path...")
+            print("Fire detected ahead! Recalculating path...")
             self.path = self.compute_path()
 
             # Stop moving if no valid path exists
             if not self.path or len(self.path) < 2:
                 self.game_over = True
-                print("❌ No safe path. Bot cannot move.")
+                print("No safe path. Bot cannot move.")
                 return
 
         # Move bot one step forward

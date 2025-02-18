@@ -1,8 +1,8 @@
-CURRENT_BOT = 3 # # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+CURRENT_BOT = 2 # # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
 FIRE_RESISTANCE_QUOTIENT = 0.1 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
 TIME_RATE = 0.2 # SECONDS OF WAIT BETWEEN EACH T
 
-GRID_SIZE = 20  # Default value, will update dynamically
+GRID_SIZE = 25  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
 HEADER_HEIGHT = 50  # Space for text and buttons
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800  # Default window size
