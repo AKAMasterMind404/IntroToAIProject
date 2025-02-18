@@ -181,7 +181,7 @@ class ManhattanGraph:
         # Check if the next step is blocked by fire
         if not self.path or len(self.path) < 2 or self.fire_nodes.intersection(list(self.path)):
             print("Fire detected ahead! Recalculating path...")
-            self.path = self.compute_path()
+            self.path = self.compute_path_smart(avoid_adjacent_fire=False)
 
             # Stop moving if no valid path exists
             if not self.path or len(self.path) < 2:
@@ -193,9 +193,9 @@ class ManhattanGraph:
         self.curr_bot_pos = self.path[1]
         self.path.pop(0)
 
-        print(f"🤖 Bot moved to {self.curr_bot_pos}")
+        print(f" Bot moved to {self.curr_bot_pos}")
 
-    def compute_path_bot3(self, avoid_adjacent_fire=True):
+    def compute_path_smart(self, avoid_adjacent_fire=True):
         """Computes the safest path for Bot 3, either avoiding adjacent fire or just fire itself."""
         G_temp = self.Ship.copy()  # Work on a copy to keep the original graph intact
 
@@ -214,7 +214,7 @@ class ManhattanGraph:
         try:
             return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
         except nx.NetworkXNoPath:
-            print("🚨 No path found!")
+            print(" No path found!")
             return None
 
     def _moveBot3(self):
@@ -228,27 +228,27 @@ class ManhattanGraph:
         # - The path is too short to move
         # - The next step is in an unwanted node
         if not self.path or len(self.path) < 2 or primary_unwanted.intersection(set(self.path)):
-            print("🔥 Fire detected! Recalculating safest path...")
+            print("Fire detected! Recalculating safest path...")
 
             # First, try avoiding fire + adjacent burning nodes
-            self.path = self.compute_path_bot3(avoid_adjacent_fire=True)
+            self.path = self.compute_path_smart(avoid_adjacent_fire=True)
 
             # If no path exists, try avoiding only fire nodes (not adjacent burning nodes)
             if not self.path:
-                print("⚠️ No path avoiding adjacent fire! Recomputing with fire-only constraint...")
-                self.path = self.compute_path_bot3(avoid_adjacent_fire=False)
+                print("No path avoiding adjacent fire! Recomputing with fire-only constraint...")
+                self.path = self.compute_path_smart(avoid_adjacent_fire=False)
 
             # If still no path, bot is stuck
             if not self.path or len(self.path) < 2:
                 self.game_over = True
-                print("🚨 No safe path found. Bot cannot move!")
+                print("No safe path found. Bot cannot move!")
                 return
 
         # Move bot one step forward
         self.curr_bot_pos = self.path[1]  # Move to the next position
         self.path.pop(0)  # Remove the step taken
 
-        print(f"🤖 Bot 3 moved to {self.curr_bot_pos}")
+        print(f"Bot 3 moved to {self.curr_bot_pos}")
 
     def _moveBot1(self):
         # Recalculate path only if it's None
@@ -262,26 +262,6 @@ class ManhattanGraph:
         # Move to the next step in the path
         next_pos = self.path.pop(0)
         self.curr_bot_pos = next_pos
-
-    def calculate_path_for_bot1(self):
-        """
-        Finds a path from the bot's current position to the button, avoiding fire nodes.
-        """
-        if self.curr_bot_pos is None or self.curr_button_pos is None:
-            return []
-
-        # Create a copy of the graph excluding fire nodes
-        safe_graph = self.Ship.copy()
-        for node in self.fire_nodes | {self.initial_fire_position}:
-            if safe_graph.has_node(node):
-                safe_graph.remove_node(node)
-
-        # Compute the shortest path avoiding fire
-        try:
-            path = nx.shortest_path(safe_graph, source=self.curr_bot_pos, target=self.curr_button_pos)
-            return path[1:]  # Exclude the starting position
-        except nx.NetworkXNoPath:
-            return []  # No valid path available
 
     def isButtonPressed(self):
         return self.curr_button_pos == self.curr_bot_pos
@@ -325,8 +305,8 @@ class ManhattanGraph:
 
     def _calculateFireProbablity(self, neighbours):
         q = cnt.FIRE_RESISTANCE_QUOTIENT
-        probablity =  1 - math.pow(1 - q, neighbours)
-        return probablity
+        probability =  1 - math.pow(1 - q, neighbours)
+        return probability
 
 def draw_grid(screen, game, n):
     screen.fill(cnt.WHITE)
