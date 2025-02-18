@@ -1,11 +1,10 @@
-# from robot import robot as r
+from robot import robot as r
 from robot import bot1 as b1
 from robot import bot2 as b2
 from robot import bot3 as b3
 from robot import bot4 as b4
 
-def RobotGateway(botType):
-    robot = None
+def RobotGateway(botType: int) -> r.Robot:
     if botType == 1:
         robot = b1.Bot1()
     elif botType == 2:

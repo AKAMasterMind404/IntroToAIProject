@@ -4,6 +4,8 @@ import networkx as nx
 import random
 import constants as cnt
 import gateways.robotgateway as rg
+from robot.robot import Robot
+
 
 class ManhattanGraph:
     def __init__(self, screen, n):
@@ -143,7 +145,7 @@ class ManhattanGraph:
                 return
 
             # Step 2: Move the bot
-            robot = rg.RobotGateway(self.bot_type)
+            robot:Robot = rg.RobotGateway(self.bot_type)
             robot.setGraph(self)
             path = robot.moveBot()
             if not path:
