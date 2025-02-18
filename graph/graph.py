@@ -172,6 +172,8 @@ class ManhattanGraph:
             self._moveBot1()
         elif bot_type == 2:
             self._moveBot2()
+        elif bot_type == 3:
+            self._moveBot3()
 
     def _moveBot2(self):
         """Moves the bot one step while dynamically avoiding fire."""
@@ -192,6 +194,61 @@ class ManhattanGraph:
         self.path.pop(0)
 
         print(f"🤖 Bot moved to {self.curr_bot_pos}")
+
+    def compute_path_bot3(self, avoid_adjacent_fire=True):
+        """Computes the safest path for Bot 3, either avoiding adjacent fire or just fire itself."""
+        G_temp = self.Ship.copy()  # Work on a copy to keep the original graph intact
+
+        # Determine which nodes to avoid
+        if avoid_adjacent_fire:
+            unwanted = set(self.nodes_with_burning_neighbours.keys()).union(self.fire_nodes)
+        else:
+            unwanted = self.fire_nodes  # Only avoid fire, allow adjacent burning nodes
+
+        for node in self.Ship.nodes:
+            if node in {self.curr_bot_pos, self.curr_button_pos}:
+                continue  # ✅ Ensure the bot's current position & button are NEVER removed
+            if self.Ship.nodes[node]['weight'] == 1 or node in unwanted:
+                G_temp.remove_node(node)
+
+        try:
+            return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
+        except nx.NetworkXNoPath:
+            print("🚨 No path found!")
+            return None
+
+    def _moveBot3(self):
+        """Moves Bot 3 by dynamically avoiding fire and re-planning if necessary."""
+
+        # Define the set of unwanted nodes (fire + adjacent to fire)
+        primary_unwanted = set(self.nodes_with_burning_neighbours.keys()).union(self.fire_nodes)
+
+        # Recalculate path if:
+        # - No existing path
+        # - The path is too short to move
+        # - The next step is in an unwanted node
+        if not self.path or len(self.path) < 2 or primary_unwanted.intersection(set(self.path)):
+            print("🔥 Fire detected! Recalculating safest path...")
+
+            # First, try avoiding fire + adjacent burning nodes
+            self.path = self.compute_path_bot3(avoid_adjacent_fire=True)
+
+            # If no path exists, try avoiding only fire nodes (not adjacent burning nodes)
+            if not self.path:
+                print("⚠️ No path avoiding adjacent fire! Recomputing with fire-only constraint...")
+                self.path = self.compute_path_bot3(avoid_adjacent_fire=False)
+
+            # If still no path, bot is stuck
+            if not self.path or len(self.path) < 2:
+                self.game_over = True
+                print("🚨 No safe path found. Bot cannot move!")
+                return
+
+        # Move bot one step forward
+        self.curr_bot_pos = self.path[1]  # Move to the next position
+        self.path.pop(0)  # Remove the step taken
+
+        print(f"🤖 Bot 3 moved to {self.curr_bot_pos}")
 
     def _moveBot1(self):
         # Recalculate path only if it's None
