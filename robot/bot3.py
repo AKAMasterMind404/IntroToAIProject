@@ -1,9 +1,8 @@
-from robot.Robot import Robot
-
+from robot.robot import Robot
 
 class Bot3(Robot):
     def __init__(self):
-        super().__init__(super().graph)
+        super().__init__()
         self.bot_type = 3
         self.avoid_fire_cells = True
         self.avoid_adjacent_fire = True
@@ -13,8 +12,8 @@ class Bot3(Robot):
 
     def moveBot(self):
         """Moves Bot 3 by dynamically avoiding fire and re-planning if necessary."""
-        graph = super().graph
         # Define the set of unwanted nodes (fire + adjacent to fire)
+        graph = self.graph
         primary_unwanted = set(graph.nodes_with_burning_neighbours.keys()).union(graph.fire_nodes)
 
         # Recalculate path if:
@@ -34,12 +33,12 @@ class Bot3(Robot):
 
             # If still no path, bot is stuck
             if not graph.path or len(graph.path) < 2:
-                graph.game_over = True
                 print("No safe path found. Bot cannot move!")
-                return
+                return False
 
         # Move bot one step forward
         graph.curr_bot_pos = graph.path[1]  # Move to the next position
         graph.path.pop(0)  # Remove the step taken
 
         print(f"Bot 3 moved to {graph.curr_bot_pos}")
+        return True

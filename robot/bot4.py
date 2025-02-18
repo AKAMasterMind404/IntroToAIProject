@@ -1,9 +1,9 @@
-from robot.Robot import Robot
+from robot.robot import Robot
 
 
 class Bot4(Robot):
     def __init__(self):
-        super().__init__(super().graph)
+        super().__init__()
         self.bot_type = 4
         self.avoid_fire_cells = True
         self.avoid_adjacent_fire = True

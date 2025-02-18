@@ -3,10 +3,12 @@ import pygame
 import networkx as nx
 import random
 import constants as cnt
+import gateways.robotgateway as rg
 
 class ManhattanGraph:
     def __init__(self, screen, n):
         self.n = n
+        self.bot_type = cnt.CURRENT_BOT
         self.game_over = False
         self.Ship = nx.Graph()
         self.start = (0, 0)
@@ -27,19 +29,6 @@ class ManhattanGraph:
         self.initial_fire_position = None
         self.curr_button_pos = None
 
-    def compute_path(self):
-        """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
-        G_temp = self.Ship.copy()  # Work on a copy to keep original graph intact
-
-        # Remove all edges connected to obstacle nodes (weight = 1)
-        for node in self.Ship.nodes:
-            if self.Ship.nodes[node]['weight'] == 1 or node in self.fire_nodes:
-                G_temp.remove_node(node)
-        try:
-            return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
-        except nx.NetworkXNoPath:
-            return None
-
     def create_manhattan_graph(self):
         for i in range(self.n):
             for j in range(self.n):
@@ -49,7 +38,7 @@ class ManhattanGraph:
                     self.Ship.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
                     self.Ship.add_edge(node, (i, j - 1), weight=1)
-        draw_grid(self.screen, self, self.n)
+        _draw_grid_internal(self)
 
     def initialize_ship_opening(self):
         xCord = random.randint(1, self.n - 2)
@@ -58,7 +47,7 @@ class ManhattanGraph:
         self.currently_open.add((xCord, yCord))
         self.one_neighbour_set = set(self.getEligibleNeighbours((xCord, yCord)))
         self.open_ship_initialized = True
-        draw_grid(self.screen, self, self.n)
+        _draw_grid_internal(self)
 
     def isNodeIsolated(self, node: tuple):
         x,y = node
@@ -102,13 +91,13 @@ class ManhattanGraph:
             if not self.one_neighbour_set:
                 self.step = 2  # Move to dead-end detection
                 self.current_step = "Identifying Dead Ends"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
 
         elif self.step == 2:
             self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
             self.current_step = "Expanding Dead Ends"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
 
         elif self.step == 3 and self.dead_ends:
             num_to_expand = len(self.dead_ends) // 2
@@ -123,7 +112,7 @@ class ManhattanGraph:
                     self.currently_open.add(to_open)
             self.step = 4
             self.current_step = "Ship Generation Complete"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
         elif self.step == 4:
             opened_nodes = list(self.currently_open)
 
@@ -141,22 +130,34 @@ class ManhattanGraph:
             self.curr_button_pos = button_square
 
             self.current_step = "Placed the button, fire and the bot"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
             self.step = 5
         elif self.step == 5:
+            # The Task
+
+            # Step 1: Checking if the button or bot has caught fire
             if not self._checkIfButtonOrBotCaughtFire():
                 self.game_over = True
-                draw_grid(self.screen, self, self.n)
                 print("Cannot Proceed!")
+                _draw_grid_internal(self)
+                return
+
+            # Step 2: Move the bot
+            robot = rg.RobotGateway(self.bot_type)
+            robot.setGraph(self)
+            path = robot.moveBot()
+            if not path:
+                self.game_over = True
+
+            # Step 3: Check if the button is pressed
+            if self._isButtonPressed():
+                print("The Fire Has been Extinguished!")
+                self.game_over = True
+                return
             else:
-                # The Task
-                self._moveBot()
-                if self.isButtonPressed():
-                    print("The Fire Has been Extinguished!")
-                    self.current_step = "The Fire Has been Extinguished!"
-                else:
-                    self._spreadFire()
-                draw_grid(self.screen, self, self.n)
+                self._spreadFire()
+
+            _draw_grid_internal(self)
             '''
             • The bot decides which open neighbor to move to.
             • The bot moves to that neighbor.
@@ -166,104 +167,8 @@ class ManhattanGraph:
             '''
             pass
 
-    def _moveBot(self):
-        bot_type = cnt.CURRENT_BOT
-        if bot_type == 1:
-            self._moveBot1()
-        elif bot_type == 2:
-            self._moveBot2()
-        elif bot_type == 3:
-            self._moveBot3()
-
-    def _moveBot2(self):
-        """Moves the bot one step while dynamically avoiding fire."""
-
-        # Check if the next step is blocked by fire
-        if not self.path or len(self.path) < 2 or self.fire_nodes.intersection(list(self.path)):
-            print("Fire detected ahead! Recalculating path...")
-            self.path = self.compute_path_smart(avoid_adjacent_fire=False)
-
-            # Stop moving if no valid path exists
-            if not self.path or len(self.path) < 2:
-                self.game_over = True
-                print("No safe path. Bot cannot move.")
-                return
-
-        # Move bot one step forward
-        self.curr_bot_pos = self.path[1]
-        self.path.pop(0)
-
-        print(f" Bot moved to {self.curr_bot_pos}")
-
-    def compute_path_smart(self, avoid_adjacent_fire=True):
-        """Computes the safest path for Bot 3, either avoiding adjacent fire or just fire itself."""
-        G_temp = self.Ship.copy()  # Work on a copy to keep the original graph intact
-
-        # Determine which nodes to avoid
-        if avoid_adjacent_fire:
-            unwanted = set(self.nodes_with_burning_neighbours.keys()).union(self.fire_nodes)
-        else:
-            unwanted = self.fire_nodes  # Only avoid fire, allow adjacent burning nodes
-
-        for node in self.Ship.nodes:
-            if node in {self.curr_bot_pos, self.curr_button_pos}:
-                continue  # ✅ Ensure the bot's current position & button are NEVER removed
-            if self.Ship.nodes[node]['weight'] == 1 or node in unwanted:
-                G_temp.remove_node(node)
-
-        try:
-            return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
-        except nx.NetworkXNoPath:
-            print(" No path found!")
-            return None
-
-    def _moveBot3(self):
-        """Moves Bot 3 by dynamically avoiding fire and re-planning if necessary."""
-
-        # Define the set of unwanted nodes (fire + adjacent to fire)
-        primary_unwanted = set(self.nodes_with_burning_neighbours.keys()).union(self.fire_nodes)
-
-        # Recalculate path if:
-        # - No existing path
-        # - The path is too short to move
-        # - The next step is in an unwanted node
-        if not self.path or len(self.path) < 2 or primary_unwanted.intersection(set(self.path)):
-            print("Fire detected! Recalculating safest path...")
-
-            # First, try avoiding fire + adjacent burning nodes
-            self.path = self.compute_path_smart(avoid_adjacent_fire=True)
-
-            # If no path exists, try avoiding only fire nodes (not adjacent burning nodes)
-            if not self.path:
-                print("No path avoiding adjacent fire! Recomputing with fire-only constraint...")
-                self.path = self.compute_path_smart(avoid_adjacent_fire=False)
-
-            # If still no path, bot is stuck
-            if not self.path or len(self.path) < 2:
-                self.game_over = True
-                print("No safe path found. Bot cannot move!")
-                return
-
-        # Move bot one step forward
-        self.curr_bot_pos = self.path[1]  # Move to the next position
-        self.path.pop(0)  # Remove the step taken
-
-        print(f"Bot 3 moved to {self.curr_bot_pos}")
-
-    def _moveBot1(self):
-        # Recalculate path only if it's None
-        if self.path is None:
-            self.path = self.compute_path()
-
-        # If no valid path exists, stop
-        if not self.path or len(self.path) == 0:
-            return
-
-        # Move to the next step in the path
-        next_pos = self.path.pop(0)
-        self.curr_bot_pos = next_pos
-
-    def isButtonPressed(self):
+    def _isButtonPressed(self):
+        self.current_step = "The Fire Has been Extinguished!"
         return self.curr_button_pos == self.curr_bot_pos
 
     def _spreadFire(self):
@@ -307,6 +212,9 @@ class ManhattanGraph:
         q = cnt.FIRE_RESISTANCE_QUOTIENT
         probability =  1 - math.pow(1 - q, neighbours)
         return probability
+
+def _draw_grid_internal(graph: ManhattanGraph):
+    draw_grid(graph.screen, graph, graph.n)
 
 def draw_grid(screen, game, n):
     screen.fill(cnt.WHITE)

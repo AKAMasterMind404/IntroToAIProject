@@ -1,18 +1,17 @@
+from abc import abstractmethod
+
 import networkx as nx
 
-from graph.graph import ManhattanGraph
-from robot import bot1 as b1
-from robot import bot2 as b2
-from robot import bot3 as b3
-from robot import bot4 as b4
-
-
 class Robot:
-    def __init__(self, graph: ManhattanGraph):
+    def __init__(self):
         self.bot_type = None
-        self.graph = graph
+        self.graph = None
         self.avoid_fire_cells = False
         self.avoid_adjacent_fire = False
+
+    @abstractmethod
+    def setGraph(self, graph):
+        self.graph = graph
 
     def compute_path(self):
         """Computes the safest path for Bot 3, either avoiding adjacent fire or just fire itself."""
@@ -43,14 +42,3 @@ class Robot:
 
     def moveBot(self):
         pass
-
-def RobotGateway(botType) -> Robot:
-    if botType == 1:
-        return b1.Bot1()
-    if botType == 2:
-        return b2.Bot2()
-    if botType == 3:
-        return b3.Bot3()
-    # if botType == 4:
-    #     return b4.Bot4()
-    raise ValueError(f"Invalid botType: {botType}")
