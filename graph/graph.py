@@ -1,9 +1,9 @@
-import math
-import pygame
 import networkx as nx
 import random
 import constants as cnt
 import gateways.robotgateway as rg
+import helpers.draw_grid as dg
+from helpers.generic import HelperService
 from robot.robot import Robot
 
 
@@ -47,7 +47,7 @@ class ManhattanGraph:
         yCord = random.randint(1, self.n - 2)
         self.Ship.nodes[(xCord, yCord)]['weight'] = 0
         self.currently_open.add((xCord, yCord))
-        self.one_neighbour_set = set(self.getEligibleNeighbours((xCord, yCord)))
+        self.one_neighbour_set = set(HelperService.getEligibleNeighbours(self, (xCord, yCord)))
         self.open_ship_initialized = True
         _draw_grid_internal(self)
 
@@ -64,25 +64,13 @@ class ManhattanGraph:
         if isOpenCount == 1:
             return True
 
-    def getAllOpenNeighbours(self, node):
-        x, y = node
-        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
-        return [(cX, cY) for cX, cY in neighbours if
-                self.n - 1 > 0 < cX and 0 < cY < self.n - 1 and (cX, cY) and self.Ship.nodes[(cX, cY)]['weight'] == 0]
-
-    def getEligibleNeighbours(self, node):
-        x, y = node
-        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
-        return [(cX, cY) for cX, cY in neighbours if
-                0 < cX < self.n - 1 and 0 < cY < self.n - 1 and (cX, cY) not in self.currently_open]
-
     def proceed(self):
         if self.step == 1 and self.one_neighbour_set:
             cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.Ship.nodes[cell_to_expand]['weight'] = 0
             self.currently_open.add(cell_to_expand)
             self.one_neighbour_set.remove(cell_to_expand)
-            new_candidates = self.getEligibleNeighbours(cell_to_expand)
+            new_candidates = HelperService.getEligibleNeighbours(self, cell_to_expand)
             for candidate in new_candidates:
                 if candidate not in self.multi_neighbour_set:
                     if candidate in self.one_neighbour_set:
@@ -106,7 +94,7 @@ class ManhattanGraph:
             random.shuffle(self.dead_ends)
             for i in range(num_to_expand):
                 dead_end = self.dead_ends[i]
-                closed_neighbors = [neighbor for neighbor in self.getEligibleNeighbours(dead_end) if
+                closed_neighbors = [neighbor for neighbor in HelperService.getEligibleNeighbours(self, dead_end) if
                                     self.Ship.nodes[neighbor]['weight'] == 1]
                 if closed_neighbors:
                     to_open = random.choice(closed_neighbors)
@@ -178,7 +166,7 @@ class ManhattanGraph:
 
         for x,y in newFireyDict.keys():
             neighbors = self.nodes_with_burning_neighbours[(x,y)]
-            fire_luck = self._calculateFireProbablity(neighbors)
+            fire_luck = HelperService.calculateFireProbability(neighbors)
             willLightUpLuck = random.random()
 
             isCatchFire = willLightUpLuck > fire_luck
@@ -200,7 +188,7 @@ class ManhattanGraph:
         return True
 
     def _findPotentialNeighbours(self, fireNode: tuple, existingNeighbours: dict):
-        neighbors = self.getAllOpenNeighbours(fireNode)
+        neighbors = HelperService.getAllOpenNeighbours(self.Ship, fireNode, self.n)
 
         newFireDict = existingNeighbours.copy()
         for x, y in neighbors:
@@ -210,62 +198,5 @@ class ManhattanGraph:
 
         return newFireDict
 
-    def _calculateFireProbablity(self, neighbours):
-        q = cnt.FIRE_RESISTANCE_QUOTIENT
-        probability =  1 - math.pow(1 - q, neighbours)
-        return probability
-
 def _draw_grid_internal(graph: ManhattanGraph):
-    draw_grid(graph.screen, graph, graph.n)
-
-def draw_grid(screen, game, n):
-    screen.fill(cnt.WHITE)
-    font = pygame.font.SysFont(None, 30)
-    text = font.render(game.current_step, True, cnt.BLACK)
-    screen.blit(text, (20, 10))
-
-    for i in range(n):
-        for j in range(n):
-            x = j * (cnt.CELL_SIZE + cnt.MARGIN)
-            y = i * (cnt.CELL_SIZE + cnt.MARGIN) + cnt.HEADER_HEIGHT
-            node = (i, j)
-
-            if game.Ship.nodes[node]['weight'] == 0:
-                color = cnt.WHITE
-            else:
-                color = cnt.BLACK
-
-            if node in game.nodes_with_burning_neighbours.keys():
-                intensity = game.nodes_with_burning_neighbours[node]
-                if intensity == 1:
-                    color = cnt.ORANGE
-                elif intensity == 2:
-                    color = cnt.D1_ORANGE
-                elif intensity == 3:
-                    color = cnt.D2_ORANGE
-            if node in game.one_neighbour_set:
-                color = cnt.YELLOW
-            if node in game.dead_ends and game.step < 4:
-                color = cnt.RED
-            if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
-                color = cnt.GREEN
-            if node in (game.path or []):
-                color = cnt.YELLOW
-            if node in game.fire_nodes:
-                color = cnt.RED
-            if node == game.curr_bot_pos:
-                color = cnt.BLUE
-            if node == game.curr_button_pos:
-                color = cnt.GREEN
-
-            pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
-            pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
-
-    # Draw "Proceed" button
-    pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
-    message =  "Proceed" if game.canProceed else "Loading ..."
-    if game.game_over: message = "Restart"
-    text = font.render(message, True, cnt.WHITE)
-    screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
-
-    pygame.display.flip()
+    dg.draw_grid(graph.screen, graph, graph.n)

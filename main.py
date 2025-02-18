@@ -2,6 +2,7 @@ import graph.graph as g
 import pygame
 import constants as cnt
 import time
+from helpers.draw_grid import draw_grid
 
 if __name__ == "__main__":
     pygame.init()
@@ -52,6 +53,6 @@ if __name__ == "__main__":
                                 graph.proceed()
                             graph.canProceed = True
 
-        g.draw_grid(screen, graph, cnt.GRID_SIZE)
+        draw_grid(screen, graph, cnt.GRID_SIZE)
 
     pygame.quit()
