@@ -20,4 +20,5 @@ def auto_game(graph: ManhattanGraph = None):
             steps += 1
             graph.proceed()
             # Generate report
+        print(f"{steps} Steps taken!")
     return graph

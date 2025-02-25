@@ -68,7 +68,6 @@ class ManhattanGraph:
 
     def proceed(self):
         if self.step == 1 and self.one_neighbour_set:
-            print(f"Step {self.step} has begun!!")
             cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.Ship.nodes[cell_to_expand]['weight'] = 0
             self.currently_open.add(cell_to_expand)
