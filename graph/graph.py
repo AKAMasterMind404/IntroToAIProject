@@ -43,6 +43,8 @@ class ManhattanGraph:
         _draw_grid_internal(self)
 
     def initialize_ship_opening(self):
+        if self.open_ship_initialized:
+            return
         xCord = random.randint(1, self.n - 2)
         yCord = random.randint(1, self.n - 2)
         self.Ship.nodes[(xCord, yCord)]['weight'] = 0
@@ -66,6 +68,7 @@ class ManhattanGraph:
 
     def proceed(self):
         if self.step == 1 and self.one_neighbour_set:
+            print(f"Step {self.step} has begun!!")
             cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.Ship.nodes[cell_to_expand]['weight'] = 0
             self.currently_open.add(cell_to_expand)
@@ -84,26 +87,33 @@ class ManhattanGraph:
             _draw_grid_internal(self)
 
         elif self.step == 2:
+            print(f"Step {self.step} has begun!!")
             self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
             self.current_step = "Expanding Dead Ends"
             _draw_grid_internal(self)
 
-        elif self.step == 3 and self.dead_ends:
-            num_to_expand = len(self.dead_ends) // 2
-            random.shuffle(self.dead_ends)
-            for i in range(num_to_expand):
-                dead_end = self.dead_ends[i]
-                closed_neighbors = [neighbor for neighbor in HelperService.getEligibleNeighbours(self, dead_end) if
-                                    self.Ship.nodes[neighbor]['weight'] == 1]
-                if closed_neighbors:
-                    to_open = random.choice(closed_neighbors)
-                    self.Ship.nodes[to_open]['weight'] = 0
-                    self.currently_open.add(to_open)
+        elif self.step == 3:
+            if self.dead_ends:
+                print(f"Step {self.step} has begun!!")
+                num_to_expand = len(self.dead_ends) // 2
+                random.shuffle(self.dead_ends)
+                for i in range(num_to_expand):
+                    dead_end = self.dead_ends[i]
+                    closed_neighbors = [neighbor for neighbor in HelperService.getEligibleNeighbours(self, dead_end) if
+                                        self.Ship.nodes[neighbor]['weight'] == 1]
+                    if closed_neighbors:
+                        to_open = random.choice(closed_neighbors)
+                        self.Ship.nodes[to_open]['weight'] = 0
+                        self.currently_open.add(to_open)
+            else:
+                print("Dead ends not found!!")
             self.step = 4
             self.current_step = "Ship Generation Complete"
             _draw_grid_internal(self)
+
         elif self.step == 4:
+            print(f"Step {self.step} has begun!!")
             opened_nodes = list(self.currently_open)
 
             fire_square = random.choice(opened_nodes)
@@ -123,6 +133,7 @@ class ManhattanGraph:
             _draw_grid_internal(self)
             self.step = 5
         elif self.step == 5:
+            print(f"Step {self.step} has begun!!")
             # The Task
 
             # Step 1: Checking if the button or bot has caught fire

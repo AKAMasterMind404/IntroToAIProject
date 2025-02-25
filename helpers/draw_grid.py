@@ -2,6 +2,7 @@ import pygame
 import constants as cnt
 
 def draw_grid(screen, game, n):
+    if not screen: return
     screen.fill(cnt.WHITE)
     font = pygame.font.SysFont(None, 30)
     text = font.render(game.current_step, True, cnt.BLACK)
