@@ -70,9 +70,6 @@ def djikstras(graph: dict, startNode: tuple):
     while len(visited) != len(graph.keys()):
         # Assign a node as current
         curr = _findCurr(queue, visited)
-        if curr is None:  # Handle disconnected graphs
-            break
-
         neighbours = [i for i in graph[curr] if i['node'] not in visited]
 
         for neighbour in neighbours:
