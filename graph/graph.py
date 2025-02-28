@@ -147,14 +147,18 @@ class ManhattanGraph:
             robot.setGraph(self)
             path = robot.moveBot()
             if not path:
+                self.current_step = "No Path Found! Cannot proceed further!"
                 self.game_over = True
 
             # Step 3: Check if the button is pressed
             if self._isButtonPressed():
                 print("The Fire Has been Extinguished!")
+                self.current_step = "The Fire Has been Extinguished!"
                 self.game_over = True
                 return
             else:
+                if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
+                    self.current_step = "No Path Found! Cannot proceed!"
                 self._spreadFire()
 
             _draw_grid_internal(self)
@@ -168,7 +172,6 @@ class ManhattanGraph:
             pass
 
     def _isButtonPressed(self):
-        self.current_step = "The Fire Has been Extinguished!"
         return self.curr_button_pos == self.curr_bot_pos
 
     def _spreadFire(self):
