@@ -1,3 +1,6 @@
+import networkx as nx
+
+
 def compatibleGraph(graph: list) -> dict:
     newGraph = dict()
 
@@ -53,7 +56,7 @@ def getPathFromATOB(queue:dict, A: tuple, B: tuple):
         path.append(curr)
         next = queue.get(curr)
         if not next:
-            break
+            raise nx.NetworkXNoPath
         curr = next['prev']
 
     result = path
