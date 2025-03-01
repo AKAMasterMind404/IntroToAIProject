@@ -11,8 +11,8 @@ def RobotGateway(botType: int) -> r.Robot:
         robot = b2.Bot2()
     elif botType == 3:
         robot = b3.Bot3()
-    # if botType == 4:
-    #     robot = b4.Bot4()
+    elif botType == 4:
+        robot = b4.Bot4()
     else:
         raise ValueError(f"Invalid botType: {botType}")
     return robot

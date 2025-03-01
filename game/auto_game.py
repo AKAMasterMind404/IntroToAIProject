@@ -1,15 +1,8 @@
-import constants as cnt
-from graph.graph import ManhattanGraph
-
-def auto_game(graph: ManhattanGraph = None):
-    if not graph:
-        graph = ManhattanGraph(None, cnt.GRID_SIZE)
-        graph.create_manhattan_graph()
-
+def auto_game(graphFunction: ()):
+    graph = graphFunction(None)
     graph.initialize_ship_opening()
     if graph.game_over:
-        graph = ManhattanGraph(None, cnt.GRID_SIZE)
-        graph.create_manhattan_graph()
+        graph = graphFunction(None)
         graph.proceed()
     else:
         graph.canProceed = False
