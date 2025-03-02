@@ -32,6 +32,7 @@ class ManhattanGraph:
         self.initial_fire_position = None
         self.curr_button_pos = None
         self.isFireExtinguished = None
+        self.t = 0
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -42,7 +43,6 @@ class ManhattanGraph:
                     self.Ship.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
                     self.Ship.add_edge(node, (i, j - 1), weight=1)
-        _draw_grid_internal(self)
 
     def initialize_ship_opening(self):
         if self.open_ship_initialized:
@@ -135,6 +135,7 @@ class ManhattanGraph:
             self.step = 5
         elif self.step == 5:
             HelperService.printDebug(f"Step {self.step} has begun!!")
+            self.t += 1
             # The Task
 
             # Step 1: Checking if the button or bot has caught fire
@@ -216,3 +217,9 @@ class ManhattanGraph:
 
 def _draw_grid_internal(graph: ManhattanGraph):
     dg.draw_grid(graph.screen, graph, graph.n)
+
+def getGraph(screen, bot_type, q, ipCells: set = None):
+    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
+    graph.create_manhattan_graph()
+
+    return graph

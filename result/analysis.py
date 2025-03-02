@@ -1,5 +1,9 @@
+import random
 import matplotlib.pyplot as plt
 import pandas as pd
+
+from game.auto_game import auto_game
+
 
 class Result:
     @staticmethod
@@ -11,7 +15,7 @@ class Result:
             file.write(f"{contents}\n")
 
     @staticmethod
-    def analysis(botType):
+    def botWiseAnalysis(botType):
         file_path = f"result/bot{botType}.txt"  # File path
 
         # Read the file
@@ -35,7 +39,8 @@ class Result:
         total_records = {label: 0 for label in ranges}
 
         # Count wins and total records per range
-        for _, row in data.iterrows():
+        allRecords = list(data.iterrows())
+        for _, row in allRecords:
             q, win = row['q'], row['win']
             for label, (low, high) in ranges.items():
                 if low <= q <= high:
@@ -66,12 +71,19 @@ class Result:
         plt.xlabel("q Ranges", fontsize=12)
         plt.ylabel("Total Records", fontsize=12)
         plt.title(f"Win/Loss Analysis for Bot {botType}", fontsize=14)
-        plt.ylim(0, 100)  # Set max y-axis to 100
+        plt.ylim(0, len(allRecords) // len(ranges))
         plt.legend()
 
         plt.grid(axis="y", linestyle="--", alpha=0.7)
         plt.show()
 
-    # Example call
-    # analysis("bot1")
-
+    @staticmethod
+    def fillRecords(recordsPerBot):
+        for qRange in ([0, 0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9, 1]):
+            for bot in [1, 2, 3]:
+                for i in range(recordsPerBot):
+                    qXRange = random.choice(qRange)
+                    g = auto_game(q=qXRange, bot_type=bot)
+                    q, isFireExtinguished, bot_type = g.q, g.isFireExtinguished, g.bot_type
+                    Result.write(f'bot{bot_type}', f'{q}, {isFireExtinguished}, {bot_type}')
+                print(f"Finished q ranges from {qRange} for bot {bot}")

@@ -7,7 +7,7 @@ class Bot2(Robot):
         super().__init__()
         self.bot_type = 2
         self.avoid_fire_cells = True
-        self.avoid_adjacent_fire = False
+        self.avoid_adjacent_fire_cells = False
         
     def compute_path(self):
         return super().compute_path()

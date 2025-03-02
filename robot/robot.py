@@ -7,7 +7,7 @@ class Robot:
         self.bot_type = None
         self.graph = None
         self.avoid_fire_cells = False
-        self.avoid_adjacent_fire = False
+        self.avoid_adjacent_fire_cells = False
 
     @abstractmethod
     def setGraph(self, graph):
@@ -17,15 +17,15 @@ class Robot:
         """Computes the safest path for Bot 3, either avoiding adjacent fire or just fire itself."""
 
         HelperService.printDebug(f"Computing path for Bot {self.bot_type}, with Avoid Fire cells: {self.avoid_fire_cells}"
-              f" and Avoid fire neighbours: {self.avoid_adjacent_fire}")
+              f" and Avoid fire neighbours: {self.avoid_adjacent_fire_cells}")
         graph = self.graph
         G_temp:nx.Graph = graph.Ship.copy()  # Work on a copy to keep the original graph intact
 
         # Determine which nodes to avoid
         unwanted = set()
-        if self.avoid_fire_cells:
+        if self.graph.t == 1 or self.avoid_fire_cells:
             unwanted = unwanted.union(graph.fire_nodes)
-        if self.avoid_adjacent_fire:
+        if self.avoid_adjacent_fire_cells:
             unwanted = unwanted.union(set(graph.nodes_with_burning_neighbours.keys()))
 
         for node in graph.Ship.nodes:

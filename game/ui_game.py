@@ -4,7 +4,8 @@ import time
 import graph.graph as g
 from helpers.draw_grid import draw_grid
 
-def ui_game(q: float, bot_type):
+
+def ui_game(q: float, bot_type, ipCells: set = None):
     pygame.init()
 
     screen_width, screen_height = 800, 800  # Default size
@@ -13,9 +14,7 @@ def ui_game(q: float, bot_type):
     screen = pygame.display.set_mode(cnt.SCREEN_SIZE, pygame.RESIZABLE)
     pygame.display.set_caption("The Bot is on Fire!")
 
-    graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
-    graph.create_manhattan_graph()
-
+    graph = g.getGraph(screen, bot_type, q, ipCells)
     running = True
     steps = 0
 
@@ -31,15 +30,16 @@ def ui_game(q: float, bot_type):
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
+                graph.initialize_ship_opening()
                 if cnt.SCREEN_SIZE[0] // 2 - 50 <= x <= cnt.SCREEN_SIZE[0] // 2 + 50 and cnt.SCREEN_SIZE[1] - 40 <= y <= \
                         cnt.SCREEN_SIZE[1] - 10:
-                    graph.initialize_ship_opening()
                     if not graph.canProceed:
                         print("Wait for the action to be complete!")
                         pass
                     if graph.game_over:
-                        graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
-                        graph.create_manhattan_graph()
+                        graph = g.getGraph(screen, bot_type, q, ipCells)
+                        graph.initialize_ship_opening()
+                        draw_grid(screen, graph, graph.n)
                         graph.proceed()
                     else:
                         graph.canProceed = False
@@ -65,7 +65,6 @@ def ui_game(q: float, bot_type):
                         else:
                             graph.isFireExtinguished = False
                             print(f"Fire has NOT been PUT OUT {isFirePutOut}")
-                        steps = 0
         draw_grid(screen, graph, cnt.GRID_SIZE)
 
     pygame.quit()
