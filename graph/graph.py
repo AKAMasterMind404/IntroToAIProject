@@ -8,8 +8,9 @@ from robot.robot import Robot
 
 
 class ManhattanGraph:
-    def __init__(self, screen, n):
+    def __init__(self, screen, n, q):
         self.n = n
+        self.q = q
         self.bot_type = cnt.CURRENT_BOT
         self.game_over = False
         self.Ship = nx.Graph()
@@ -30,6 +31,7 @@ class ManhattanGraph:
         self.curr_bot_pos = None
         self.initial_fire_position = None
         self.curr_button_pos = None
+        self.isFireExtinguished = None
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -86,7 +88,7 @@ class ManhattanGraph:
             _draw_grid_internal(self)
 
         elif self.step == 2:
-            print(f"Step {self.step} has begun!!")
+            HelperService.printDebug(f"Step {self.step} has begun!!")
             self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
             self.current_step = "Expanding Dead Ends"
@@ -94,7 +96,7 @@ class ManhattanGraph:
 
         elif self.step == 3:
             if self.dead_ends:
-                print(f"Step {self.step} has begun!!")
+                HelperService.printDebug(f"Step {self.step} has begun!!")
                 num_to_expand = len(self.dead_ends) // 2
                 random.shuffle(self.dead_ends)
                 for i in range(num_to_expand):
@@ -106,13 +108,13 @@ class ManhattanGraph:
                         self.Ship.nodes[to_open]['weight'] = 0
                         self.currently_open.add(to_open)
             else:
-                print("Dead ends not found!!")
+                HelperService.printDebug("Dead ends not found!!")
             self.step = 4
             self.current_step = "Ship Generation Complete"
             _draw_grid_internal(self)
 
         elif self.step == 4:
-            print(f"Step {self.step} has begun!!")
+            HelperService.printDebug(f"Step {self.step} has begun!!")
             opened_nodes = list(self.currently_open)
 
             fire_square = random.choice(opened_nodes)
@@ -132,13 +134,14 @@ class ManhattanGraph:
             _draw_grid_internal(self)
             self.step = 5
         elif self.step == 5:
-            print(f"Step {self.step} has begun!!")
+            HelperService.printDebug(f"Step {self.step} has begun!!")
             # The Task
 
             # Step 1: Checking if the button or bot has caught fire
             if not self._checkIfButtonOrBotCaughtFire():
+                self.isFireExtinguished = False
                 self.game_over = True
-                print("Cannot Proceed!")
+                HelperService.printDebug("Cannot Proceed!")
                 _draw_grid_internal(self)
                 return
 
@@ -152,13 +155,16 @@ class ManhattanGraph:
 
             # Step 3: Check if the button is pressed
             if self._isButtonPressed():
-                print("The Fire Has been Extinguished!")
+                HelperService.printDebug("The Fire Has been Extinguished!")
                 self.current_step = "The Fire Has been Extinguished!"
                 self.game_over = True
+                self.isFireExtinguished = True
                 return
             else:
                 if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
                     self.current_step = "No Path Found! Cannot proceed!"
+                    self.game_over = True
+                    self.isFireExtinguished = False
                 self._spreadFire()
 
             _draw_grid_internal(self)
@@ -179,7 +185,7 @@ class ManhattanGraph:
 
         for x,y in newFireyDict.keys():
             neighbors = self.nodes_with_burning_neighbours[(x,y)]
-            fire_luck = HelperService.calculateFireProbability(neighbors)
+            fire_luck = HelperService.calculateFireProbability(neighbors, self.q)
             willLightUpLuck = random.random()
 
             isCatchFire = willLightUpLuck > fire_luck
@@ -190,12 +196,12 @@ class ManhattanGraph:
 
     def _checkIfButtonOrBotCaughtFire(self):
         if self.curr_button_pos in self.fire_nodes:
-            print("Game over! The button is on fire")
+            HelperService.printDebug("Game over! The button is on fire")
             self.current_step = "Game over! The button is on fire"
             return False
         if self.curr_bot_pos in self.fire_nodes:
             self.current_step = "Game over! The Bot is on fire"
-            print("Game over! The Bot is on fire!")
+            HelperService.printDebug("Game over! The Bot is on fire!")
             return False
 
         return True

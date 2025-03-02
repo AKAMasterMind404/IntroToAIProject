@@ -3,6 +3,12 @@ import constants as cnt
 import math
 
 class HelperService:
+
+    @staticmethod
+    def printDebug(arg: str):
+        if cnt.K_DEBUG_MODE:
+            print(arg)
+
     @staticmethod
     def neighbours(node: tuple) -> list:
         x, y = node
@@ -21,7 +27,6 @@ class HelperService:
                 0 < cX < graph.n - 1 and 0 < cY < graph.n - 1 and (cX, cY) not in graph.currently_open]
 
     @staticmethod
-    def calculateFireProbability(neighbours):
-        q = cnt.FIRE_RESISTANCE_QUOTIENT
+    def calculateFireProbability(neighbours, q):
         probability =  1 - math.pow(1 - q, neighbours)
         return probability

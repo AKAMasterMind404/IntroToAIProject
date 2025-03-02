@@ -1,6 +1,7 @@
 CURRENT_BOT = 3 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
 FIRE_RESISTANCE_QUOTIENT = 0 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
 TIME_RATE = 0.1 # SECONDS OF WAIT BETWEEN EACH T
+K_DEBUG_MODE = False
 
 GRID_SIZE = 40  # Default value, will update dynamically
 MARGIN = 2  # Space between cells

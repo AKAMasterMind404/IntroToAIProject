@@ -1,14 +1,14 @@
 import constants as cnt
 from graph.graph import ManhattanGraph
 
-def auto_game(graph: ManhattanGraph = None):
+def auto_game(graph: ManhattanGraph = None, q = cnt.FIRE_RESISTANCE_QUOTIENT):
     if not graph:
-        graph = ManhattanGraph(None, cnt.GRID_SIZE)
+        graph = ManhattanGraph(None, cnt.GRID_SIZE, q)
         graph.create_manhattan_graph()
 
     graph.initialize_ship_opening()
     if graph.game_over:
-        graph = ManhattanGraph(None, cnt.GRID_SIZE)
+        graph = ManhattanGraph(None, cnt.GRID_SIZE, q)
         graph.create_manhattan_graph()
         graph.proceed()
     else:
@@ -20,5 +20,4 @@ def auto_game(graph: ManhattanGraph = None):
             steps += 1
             graph.proceed()
             # Generate report
-        print(f"{steps} Steps taken!")
     return graph

@@ -1,3 +1,4 @@
+from helpers.generic import HelperService
 from robot.robot import Robot
 
 
@@ -17,17 +18,17 @@ class Bot2(Robot):
 
         # Check if the next step is blocked by fire
         if not graph.path or len(graph.path) < 2 or graph.fire_nodes.intersection(list(graph.path)):
-            print("Fire detected ahead! Recalculating path...")
+            HelperService.printDebug("Fire detected ahead! Recalculating path...")
             graph.path = self.compute_path()
 
             # Stop moving if no valid path exists
             if not graph.path or len(graph.path) < 2:
-                print("No safe path. Bot cannot move.")
+                HelperService.printDebug("No safe path. Bot cannot move.")
                 return False
 
         # Move bot one step forward
         graph.curr_bot_pos = graph.path[1]
         graph.path.pop(0)
 
-        print(f" Bot moved to {graph.curr_bot_pos}")
+        HelperService.printDebug(f" Bot moved to {graph.curr_bot_pos}")
         return True

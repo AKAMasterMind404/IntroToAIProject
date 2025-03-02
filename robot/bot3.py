@@ -1,3 +1,4 @@
+from helpers.generic import HelperService
 from robot.robot import Robot
 
 class Bot3(Robot):
@@ -21,24 +22,24 @@ class Bot3(Robot):
         # - The path is too short to move
         # - The next step is in an unwanted node
         if not graph.path or len(graph.path) < 2 or primary_unwanted.intersection(set(graph.path)):
-            print("Fire detected! Recalculating safest path...")
+            HelperService.printDebug("Fire detected! Recalculating safest path...")
 
             # First, try avoiding fire + adjacent burning nodes
             graph.path = self.compute_path()
 
             # If no path exists, try avoiding only fire nodes (not adjacent burning nodes)
             if not graph.path:
-                print("No path avoiding adjacent fire! Recomputing with fire-only constraint...")
+                HelperService.printDebug("No path avoiding adjacent fire! Recomputing with fire-only constraint...")
                 graph.path = self.compute_path()
 
             # If still no path, bot is stuck
             if not graph.path or len(graph.path) < 2:
-                print("No safe path found. Bot cannot move!")
+                HelperService.printDebug("No safe path found. Bot cannot move!")
                 return False
 
         # Move bot one step forward
         graph.curr_bot_pos = graph.path[1]  # Move to the next position
         graph.path.pop(0)  # Remove the step taken
 
-        print(f"Bot 3 moved to {graph.curr_bot_pos}")
+        HelperService.printDebug(f"Bot 3 moved to {graph.curr_bot_pos}")
         return True
