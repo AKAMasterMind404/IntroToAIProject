@@ -18,6 +18,7 @@ class ManhattanGraph:
         self.path = None
         self.canProceed = True
         self.screen = screen
+        self.current_step = "Ship Expansion"
         self.one_neighbour_set = set()
         self.currently_open = set()
         self.multi_neighbour_set = set()
@@ -29,7 +30,6 @@ class ManhattanGraph:
         self.curr_bot_pos = None
         self.initial_fire_position = None
         self.curr_button_pos = None
-        self.currentText = GraphHelper.getCurrentText(self.step)
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -40,6 +40,7 @@ class ManhattanGraph:
                     self.Ship.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
                     self.Ship.add_edge(node, (i, j - 1), weight=1)
+        _draw_grid_internal(self)
 
     def initialize_ship_opening(self):
         if self.open_ship_initialized:
@@ -81,14 +82,14 @@ class ManhattanGraph:
                         self.one_neighbour_set.add(candidate)
             if not self.one_neighbour_set:
                 self.step = 2  # Move to dead-end detection
-                self.currentText = GraphHelper.getCurrentText(self.step)
+                self.current_step = "Identifying Dead Ends"
             _draw_grid_internal(self)
 
         elif self.step == 2:
             print(f"Step {self.step} has begun!!")
             self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
-            self.currentText = GraphHelper.getCurrentText(self.step)
+            self.current_step = "Expanding Dead Ends"
             _draw_grid_internal(self)
 
         elif self.step == 3:
@@ -107,7 +108,7 @@ class ManhattanGraph:
             else:
                 print("Dead ends not found!!")
             self.step = 4
-            self.currentText = GraphHelper.getCurrentText(self.step)
+            self.current_step = "Ship Generation Complete"
             _draw_grid_internal(self)
 
         elif self.step == 4:
@@ -127,9 +128,9 @@ class ManhattanGraph:
             button_square = random.choice(opened_nodes)
             self.curr_button_pos = button_square
 
-            self.step = 5
-            self.currentText = GraphHelper.getCurrentText(self.step)
+            self.current_step = "Placed the button, fire and the bot"
             _draw_grid_internal(self)
+            self.step = 5
         elif self.step == 5:
             print(f"Step {self.step} has begun!!")
             # The Task
@@ -146,18 +147,18 @@ class ManhattanGraph:
             robot.setGraph(self)
             path = robot.moveBot()
             if not path:
-                self.currentText = GraphHelper.getCurrentText(8)
+                self.current_step = "No Path Found! Cannot proceed further!"
                 self.game_over = True
 
             # Step 3: Check if the button is pressed
             if self._isButtonPressed():
                 print("The Fire Has been Extinguished!")
-                self.currentText = GraphHelper.getCurrentText(7)
+                self.current_step = "The Fire Has been Extinguished!"
                 self.game_over = True
                 return
             else:
                 if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
-                    self.currentText = GraphHelper.getCurrentText(8)
+                    self.current_step = "No Path Found! Cannot proceed!"
                 self._spreadFire()
 
             _draw_grid_internal(self)
@@ -190,10 +191,10 @@ class ManhattanGraph:
     def _checkIfButtonOrBotCaughtFire(self):
         if self.curr_button_pos in self.fire_nodes:
             print("Game over! The button is on fire")
-            self.currentText = GraphHelper.getCurrentText(9)
+            self.current_step = "Game over! The button is on fire"
             return False
         if self.curr_bot_pos in self.fire_nodes:
-            self.currentText = GraphHelper.getCurrentText(10)
+            self.current_step = "Game over! The Bot is on fire"
             print("Game over! The Bot is on fire!")
             return False
 
@@ -212,50 +213,3 @@ class ManhattanGraph:
 
 def _draw_grid_internal(graph: ManhattanGraph):
     dg.draw_grid(graph.screen, graph, graph.n)
-
-class GraphHelper:
-    @staticmethod
-    def getCurrentText(code: int):
-        text = "Ship Expansion"
-        if code == 2:
-            text = "Identifying Dead Ends"
-        elif code == 3:
-            text = "Expanding Dead Ends"
-        elif code == 4:
-            text = "Ship Generation Complete"
-        elif code == 5:
-            text = "Placed the button, fire and the bot"
-        elif code == 6:
-            text = "7 Path Found! Cannot proceed further!"
-        elif code == 7:
-            text = "The Fire Has been Extinguished!"
-        elif code == 8:
-            text = "No Path Found! Cannot proceed!"
-        elif code == 9:
-            text = "Game over! The button is on fire"
-        elif code == 10:
-            text = "Game over! The Bot is on fire"
-        return text
-
-    @staticmethod
-    def getFreshGraph(screen):
-        graph = ManhattanGraph(screen, cnt.GRID_SIZE)
-        graph.create_manhattan_graph()
-        return graph
-
-    @staticmethod
-    def openGraph(screen):
-        graph = ManhattanGraph(screen, cnt.GRID_SIZE)
-        graph.create_manhattan_graph()
-        currently_open = set()
-        for i in range(graph.n):
-            for j in range(graph.n):
-                if i in range(1, graph.n - 1) and j in range(1, graph.n - 1):
-                    graph.Ship.nodes[(i, j)]['weight'] = 0
-                    currently_open.add((i, j))
-                else:
-                    graph.Ship.nodes[(i, j)]['weight'] = 1
-        graph.one_neighbour_set = set()
-        graph.step = 4
-        graph.currently_open = currently_open
-        return graph

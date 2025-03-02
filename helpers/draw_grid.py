@@ -5,7 +5,7 @@ def draw_grid(screen, game, n):
     if not screen: return
     screen.fill(cnt.WHITE)
     font = pygame.font.SysFont(None, 30)
-    text = font.render(game.currentText, True, cnt.BLACK)
+    text = font.render(game.current_step, True, cnt.BLACK)
     screen.blit(text, (20, 10))
 
     for i in range(n):

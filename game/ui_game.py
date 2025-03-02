@@ -1,19 +1,23 @@
-from symtable import Function
-from graph.graph import GraphHelper, ManhattanGraph
-from helpers.draw_grid import draw_grid
 import pygame
 import constants as cnt
 import time
+import graph.graph as g
+from helpers.draw_grid import draw_grid
 
-def ui_game(screen, graphFunction: () = GraphHelper.getFreshGraph):
+def ui_game():
     pygame.init()
+
+    screen_width, screen_height = 800, 800  # Default size
+    cnt.CELL_SIZE, cnt.SCREEN_SIZE = cnt.update_grid_constants(cnt.GRID_SIZE, screen_width, screen_height)
+
+    screen = pygame.display.set_mode(cnt.SCREEN_SIZE, pygame.RESIZABLE)
     pygame.display.set_caption("The Bot is on Fire!")
+
+    graph = g.ManhattanGraph(screen, cnt.GRID_SIZE)
+    graph.create_manhattan_graph()
 
     running = True
     steps = 0
-
-    # Initializing graph, if not passed as a parameter
-    graph = graphFunction(screen)
 
     while running:
         for event in pygame.event.get():
@@ -34,8 +38,8 @@ def ui_game(screen, graphFunction: () = GraphHelper.getFreshGraph):
                         print("Wait for the action to be complete!")
                         pass
                     if graph.game_over:
-                        graph = graphFunction(screen)
-                        draw_grid(screen, graph, graph.n)
+                        graph = g.ManhattanGraph(screen, cnt.GRID_SIZE)
+                        graph.create_manhattan_graph()
                         graph.proceed()
                     else:
                         graph.canProceed = False
@@ -61,4 +65,5 @@ def ui_game(screen, graphFunction: () = GraphHelper.getFreshGraph):
                             print(f"Fire has NOT been PUT OUT {isFirePutOut}")
                         steps = 0
         draw_grid(screen, graph, cnt.GRID_SIZE)
+
     pygame.quit()
