@@ -8,10 +8,10 @@ from robot.robot import Robot
 
 
 class ManhattanGraph:
-    def __init__(self, screen, n, q):
+    def __init__(self, screen, n, q, bot_type):
         self.n = n
         self.q = q
-        self.bot_type = cnt.CURRENT_BOT
+        self.bot_type = bot_type
         self.game_over = False
         self.Ship = nx.Graph()
         self.start = (0, 0)

@@ -4,7 +4,7 @@ import time
 import graph.graph as g
 from helpers.draw_grid import draw_grid
 
-def ui_game(q: float):
+def ui_game(q: float, bot_type):
     pygame.init()
 
     screen_width, screen_height = 800, 800  # Default size
@@ -13,7 +13,7 @@ def ui_game(q: float):
     screen = pygame.display.set_mode(cnt.SCREEN_SIZE, pygame.RESIZABLE)
     pygame.display.set_caption("The Bot is on Fire!")
 
-    graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q)
+    graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
     graph.create_manhattan_graph()
 
     running = True
@@ -38,7 +38,7 @@ def ui_game(q: float):
                         print("Wait for the action to be complete!")
                         pass
                     if graph.game_over:
-                        graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q)
+                        graph = g.ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
                         graph.create_manhattan_graph()
                         graph.proceed()
                     else:
