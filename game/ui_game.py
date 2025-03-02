@@ -60,8 +60,10 @@ def ui_game(q: float):
                         print(f"Steps taken is {steps}")
                         print(f"The Value of Q is {q}")
                         if isFirePutOut:
+                            graph.isFireExtinguished = True
                             print(f"Fire has been PUT OUT {isFirePutOut}")
                         else:
+                            graph.isFireExtinguished = False
                             print(f"Fire has NOT been PUT OUT {isFirePutOut}")
                         steps = 0
         draw_grid(screen, graph, cnt.GRID_SIZE)

@@ -20,4 +20,6 @@ def auto_game(graph: ManhattanGraph = None, q = cnt.FIRE_RESISTANCE_QUOTIENT):
             steps += 1
             graph.proceed()
             # Generate report
+        isFirePutOut = graph.curr_bot_pos == graph.curr_button_pos
+        graph.isFireExtinguished = isFirePutOut
     return graph

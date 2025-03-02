@@ -139,7 +139,6 @@ class ManhattanGraph:
 
             # Step 1: Checking if the button or bot has caught fire
             if not self._checkIfButtonOrBotCaughtFire():
-                self.isFireExtinguished = False
                 self.game_over = True
                 HelperService.printDebug("Cannot Proceed!")
                 _draw_grid_internal(self)
@@ -158,13 +157,11 @@ class ManhattanGraph:
                 HelperService.printDebug("The Fire Has been Extinguished!")
                 self.current_step = "The Fire Has been Extinguished!"
                 self.game_over = True
-                self.isFireExtinguished = True
                 return
             else:
                 if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
                     self.current_step = "No Path Found! Cannot proceed!"
                     self.game_over = True
-                    self.isFireExtinguished = False
                 self._spreadFire()
 
             _draw_grid_internal(self)
