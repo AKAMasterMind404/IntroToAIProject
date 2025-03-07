@@ -18,7 +18,7 @@ D1_ORANGE = (255, 140, 0)
 D2_ORANGE = (255, 120, 0)
 D3_ORANGE = (255, 100, 0)
 GREEN = (0, 255, 0)
-GRAY = (200, 200, 200)
+GRAY = (99, 102, 106)
 BLUE = (0, 100, 255)
 
 def update_grid_constants(n, screen_width, screen_height):

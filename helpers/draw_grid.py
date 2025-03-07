@@ -40,7 +40,7 @@ def draw_grid(screen, game, n):
             if node == game.curr_bot_pos:
                 color = cnt.BLUE
             if node == game.curr_button_pos:
-                color = cnt.GREEN
+                color = cnt.GRAY
 
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
