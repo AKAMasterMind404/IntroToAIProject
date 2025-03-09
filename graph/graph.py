@@ -32,6 +32,7 @@ class ManhattanGraph:
         self.initial_fire_position = None
         self.curr_button_pos = None
         self.isFireExtinguished = None
+        self.beenTo = []
         self.t = 0
 
     def create_manhattan_graph(self):
@@ -184,9 +185,9 @@ class ManhattanGraph:
         for x,y in newFireyDict.keys():
             neighbors = self.nodes_with_burning_neighbours[(x,y)]
             fire_luck = HelperService.calculateFireProbability(neighbors, self.q)
-            willLightUpLuck = random.random()
+            randomNumber = random.random()
 
-            isCatchFire = willLightUpLuck > fire_luck
+            isCatchFire = randomNumber < fire_luck
             if isCatchFire:
                 self.fire_nodes.add((x,y))
                 newFireyDict = self._findPotentialNeighbours((x, y), newFireyDict)

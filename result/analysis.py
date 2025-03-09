@@ -1,7 +1,6 @@
 import random
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from game.auto_game import auto_game
 
 
@@ -28,11 +27,12 @@ class Result:
         data["win"] = data["win"].astype(str).str.strip().str.lower() == "true"
 
         # Define q ranges
-        ranges = {
-            "0 - 0.3": (0.0, 0.3),
-            "0.4 - 0.6": (0.4, 0.6),
-            "0.7 - 1": (0.7, 1.0)
-        }
+        # ranges = {
+        #     "0 - 0.3": (0.0, 0.3),
+        #     "0.4 - 0.6": (0.4, 0.6),
+        #     "0.7 - 1": (0.7, 1.0)
+        # }
+        ranges = { str(i/10): i/10 for i in range(0, 10, 1)}
 
         # Initialize counters
         win_counts = {label: 0 for label in ranges}
@@ -42,8 +42,8 @@ class Result:
         allRecords = list(data.iterrows())
         for _, row in allRecords:
             q, win = row['q'], row['win']
-            for label, (low, high) in ranges.items():
-                if low <= q <= high:
+            for label, val in ranges.items():
+                if val == q:
                     total_records[label] += 1  # Count all records in this range
                     if win:
                         win_counts[label] += 1  # Count only wins
@@ -78,7 +78,7 @@ class Result:
         plt.show()
 
     @staticmethod
-    def fillRecords(recordsPerBot):
+    def fillRecordsSimple(recordsPerBot):
         for qRange in ([0, 0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9, 1]):
             for bot in [1,2,3]:
                 for i in range(recordsPerBot):
@@ -87,3 +87,88 @@ class Result:
                     q, isFireExtinguished, bot_type = g.q, g.isFireExtinguished, g.bot_type
                     Result.write(f'bot{bot_type}', f'{q}, {isFireExtinguished}, {bot_type}')
                 print(f"Finished q ranges from {qRange} for bot {bot}")
+
+    @staticmethod
+    def fillRecords(recordsToFill, dataMap: dict):
+        qRange1 = [0, 0.1, 0.2, 0.3]
+        qRange2 = [0.4, 0.5, 0.6]
+        qRange3 = [0.7, 0.8, 0.9, 1]
+
+        maxKey = list(dataMap.keys())[-1]
+        maxVal = dataMap[maxKey]
+
+        for bQ in dataMap.keys():
+            bVal, qVal = bQ.split("_")
+            bVal = int(bVal[1])
+            qVal = int(qVal[1])
+
+            qxRange = qRange1
+            if qVal == 1:
+                qxRange = qRange1
+            elif qVal == 2:
+                qxRange = qRange2
+            elif qVal == 3:
+                qxRange = qRange3
+
+            curr = dataMap.get(f"b{bVal}_q{qVal}")
+            recBehind = max(maxVal - curr, 0)
+            toDo = max(recBehind, recordsToFill//4)
+            done = 0
+
+            while toDo > 0 and done <= recordsToFill:
+                g = auto_game(q=random.choice(qxRange), bot_type=bVal)
+                q_res, isFireExtinguished, bot_type_res = g.q, g.isFireExtinguished, g.bot_type
+                Result.write(f'bot{bot_type_res}', f'{q_res}, {isFireExtinguished}, {bot_type_res}')
+
+                toDo -= 1
+                done += 1
+
+    @staticmethod
+    def getFillRecordQuantity():
+        qRange1 = [0, 0.1, 0.2, 0.3]
+        qRange2 = [0.4, 0.5, 0.6]
+        qRange3 = [0.7, 0.8, 0.9, 1]
+
+        bot1Records, bot2Records, bot3Records, bot4Records = list(), list(), list(), list()
+        try:
+            bot1Records = open("result/bot1.txt", 'r').readlines()
+            bot2Records = open("result/bot2.txt", 'r').readlines()
+            bot3Records = open("result/bot3.txt", 'r').readlines()
+            bot4Records = open("result/bot4.txt", 'r').readlines()
+        except FileNotFoundError:
+            pass
+
+        numDict = dict()
+        for bot in [1, 2, 3, 4]:
+            records = None
+            if bot == 1:
+                records = bot1Records
+            elif bot == 2:
+                records = bot2Records
+            elif bot == 3:
+                records = bot3Records
+            elif bot == 4:
+                records = bot4Records
+
+            q1Rec, q2Rec, q3Rec = 0, 0, 0
+            for rec in records:
+                if rec.strip("\n "):
+                    q, res, _ = rec.split(",")
+                    q = float(q)
+                    if q in qRange1:
+                        q1Rec += 1
+                    elif q in qRange2:
+                        q2Rec += 1
+                    elif q in qRange3:
+                        q3Rec += 1
+
+            for qR in [1, 2, 3]:
+                data = None
+                if qR == 1: data = q1Rec
+                if qR == 2: data = q2Rec
+                if qR == 3: data = q3Rec
+                numDict[f'b{bot}_q{qR}'] = data
+                pass
+
+        result = dict(sorted(numDict.items(), key=lambda item: item[1]))
+        return result

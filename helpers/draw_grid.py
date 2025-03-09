@@ -33,7 +33,7 @@ def draw_grid(screen, game, n):
                 color = cnt.RED
             if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
                 color = cnt.GREEN
-            if node in (game.path or []):
+            if node in (game.path or game.beenTo):
                 color = cnt.YELLOW
             if node in game.fire_nodes:
                 color = cnt.RED

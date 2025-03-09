@@ -1,7 +1,7 @@
 import constants as cnt
 from graph.graph import getGraph
 
-def auto_game(q = cnt.FIRE_RESISTANCE_QUOTIENT, bot_type: int = 1, ipCells: set = None):
+def auto_game(q = cnt.FLAMABILITY, bot_type: int = 1, ipCells: set = None):
     graph = getGraph(None, bot_type, q, ipCells)
     graph.initialize_ship_opening()
     graph.canProceed = False
