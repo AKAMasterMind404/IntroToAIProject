@@ -80,7 +80,7 @@ class Result:
     @staticmethod
     def fillRecordsSimple(recordsPerBot):
         for qRange in ([0, 0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9, 1]):
-            for bot in [1,2,3]:
+            for bot in [4]:
                 for i in range(recordsPerBot):
                     qXRange = random.choice(qRange)
                     g = auto_game(q=qXRange, bot_type=bot)

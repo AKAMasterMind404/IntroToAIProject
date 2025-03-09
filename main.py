@@ -3,7 +3,7 @@ from result.analysis import Result
 import constants as cnt
 
 if __name__ == "__main__":
-    IS_DATA = True
+    IS_DATA = False
     if IS_DATA:
         isPlot = False
         if isPlot:
@@ -15,4 +15,4 @@ if __name__ == "__main__":
             Result.fillRecordsSimple(recordsToFill)
             print("Data gen finished....")
     else:
-        g = ui_game(q=0.7, bot_type=cnt.CURRENT_BOT)
+        g = ui_game(q=cnt.FLAMABILITY, bot_type=cnt.CURRENT_BOT)

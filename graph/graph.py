@@ -33,6 +33,8 @@ class ManhattanGraph:
         self.curr_button_pos = None
         self.isFireExtinguished = None
         self.beenTo = []
+        self.fire_forecast = []
+        self.adj_fire_forecast = []
         self.t = 0
 
     def create_manhattan_graph(self):
@@ -164,7 +166,7 @@ class ManhattanGraph:
                 if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
                     self.current_step = "No Path Found! Cannot proceed!"
                     self.game_over = True
-                self._spreadFire()
+                self.spreadFire()
 
             _draw_grid_internal(self)
             '''
@@ -179,7 +181,7 @@ class ManhattanGraph:
     def _isButtonPressed(self):
         return self.curr_button_pos == self.curr_bot_pos
 
-    def _spreadFire(self):
+    def spreadFire(self):
         newFireyDict = self.nodes_with_burning_neighbours.copy()
 
         for x,y in newFireyDict.keys():
