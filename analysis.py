@@ -1,6 +1,7 @@
 import os
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from constants import IS_VARIABLE_GRAPH
 from game.auto_game import auto_game
@@ -16,6 +17,65 @@ class Result:
         # Writing to the file
         with open(file_path, "a+") as file:
             file.write(f"{contents}\n")
+
+    @staticmethod
+    def analyze_all_bots(bot_types=None):
+        if bot_types is None:
+            bot_types = [1, 2, 3, 4]
+        folderName = 'variable-graph-result' if IS_VARIABLE_GRAPH else 'same-graph-result'
+        q_values = [i / 10 for i in range(11)]  # q values from 0.0 to 1.0
+        ranges = {str(q): q for q in q_values}
+
+        # Initialize data structures
+        win_counts = {bot: {q: 0 for q in q_values} for bot in bot_types}
+        loss_counts = {bot: {q: 0 for q in q_values} for bot in bot_types}
+
+        # Read and process data for each bot
+        for bot in bot_types:
+            file_path = f"{os.getcwd()}/{folderName}/bot{bot}.txt"
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                continue
+
+            # Read CSV
+            data = pd.read_csv(file_path, header=None, names=['q', 'win', 'bot_type'])
+            data["win"] = data["win"].astype(str).str.strip().str.lower() == "true"
+
+            for _, row in data.iterrows():
+                q = row['q']
+                win = row['win']
+                if q in q_values:
+                    win_counts[bot][q] += int(win)
+                    loss_counts[bot][q] += int(not win)
+
+        # Visualization 1: Line Graph
+        plt.figure(figsize=(10, 6))
+        for bot in bot_types:
+            wins = [win_counts[bot][q] for q in q_values]
+            plt.plot(q_values, wins, marker='o', linestyle='-', label=f'Bot {bot} Wins')
+
+        plt.xlabel("q Values", fontsize=12)
+        plt.ylabel("Win Count", fontsize=12)
+        plt.title(f"{'Variable' if IS_VARIABLE_GRAPH else 'Constant'} Graph Comparison", fontsize=14)
+        plt.xticks(q_values)
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Visualization 2: Win/Loss Table
+        table_data = []
+        for q in q_values:
+            row = [q]
+            for bot in bot_types:
+                row.append(win_counts[bot][q])
+                row.append(loss_counts[bot][q])
+            table_data.append(row)
+
+        columns = ["q"] + [f"Bot {bot} Wins" for bot in bot_types] + [f"Bot {bot} Losses" for bot in bot_types]
+        table_df = pd.DataFrame(table_data, columns=columns)
+
+        print("\nWin/Loss Counts Table:")
+        print(table_df.to_string(index=False))
 
     @staticmethod
     def botWiseAnalysis(botType):

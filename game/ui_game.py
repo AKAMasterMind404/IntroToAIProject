@@ -55,7 +55,7 @@ def ui_game(q: float, bot_type, ipCells: set = None):
                         graph.proceed()
                         graph.canProceed = True
 
-                        q = cnt.FLAMABILITY
+                        q = cnt.FLAMMABILITY
                         isFirePutOut = graph.curr_bot_pos == graph.curr_button_pos
                         print(f"Steps taken is {steps}")
                         print(f"The Value of Q is {q}")
