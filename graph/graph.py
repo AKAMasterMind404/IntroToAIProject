@@ -1,12 +1,18 @@
-import math
-import pygame
 import networkx as nx
 import random
 import constants as cnt
+import gateways.robotgateway as rg
+import helpers.draw_grid as dg
+from graph.sample.sample1 import sample_dead_1
+from helpers.generic import HelperService
+from robot.robot import Robot
+
 
 class ManhattanGraph:
-    def __init__(self, screen, n):
+    def __init__(self, screen, n, q, bot_type, ipCells = None):
         self.n = n
+        self.q = q
+        self.bot_type = bot_type
         self.game_over = False
         self.Ship = nx.Graph()
         self.start = (0, 0)
@@ -26,19 +32,12 @@ class ManhattanGraph:
         self.curr_bot_pos = None
         self.initial_fire_position = None
         self.curr_button_pos = None
-
-    def compute_path(self):
-        """Runs Dijkstra's algorithm, ensuring obstacle nodes are avoided."""
-        G_temp = self.Ship.copy()  # Work on a copy to keep original graph intact
-
-        # Remove all edges connected to obstacle nodes (weight = 1)
-        for node in self.Ship.nodes:
-            if self.Ship.nodes[node]['weight'] == 1 or node in self.fire_nodes:
-                G_temp.remove_node(node)
-        try:
-            return nx.shortest_path(G_temp, source=self.curr_bot_pos, target=self.curr_button_pos, weight='weight')
-        except nx.NetworkXNoPath:
-            return None
+        self.isFireExtinguished = None
+        self.beenTo = []
+        self.fire_forecast = []
+        self.adj_fire_forecast = []
+        self.ipCells = ipCells
+        self.t = 0
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -49,16 +48,21 @@ class ManhattanGraph:
                     self.Ship.add_edge(node, (i - 1, j), weight=1)
                 if j > 0:
                     self.Ship.add_edge(node, (i, j - 1), weight=1)
-        draw_grid(self.screen, self, self.n)
 
     def initialize_ship_opening(self):
-        xCord = random.randint(1, self.n - 2)
-        yCord = random.randint(1, self.n - 2)
-        self.Ship.nodes[(xCord, yCord)]['weight'] = 0
+        if self.open_ship_initialized:
+            return
+
+        if self.ipCells:
+            xCord, yCord = random.choice(list(self.ipCells))
+        else:
+            xCord = random.randint(1, self.n - 2)
+            yCord = random.randint(1, self.n - 2)
+            self.one_neighbour_set = set(HelperService.getEligibleNeighbours(self, (xCord, yCord)))
         self.currently_open.add((xCord, yCord))
-        self.one_neighbour_set = set(self.getEligibleNeighbours((xCord, yCord)))
+        self.Ship.nodes[(xCord, yCord)]['weight'] = 0
         self.open_ship_initialized = True
-        draw_grid(self.screen, self, self.n)
+        _draw_grid_internal(self)
 
     def isNodeIsolated(self, node: tuple):
         x,y = node
@@ -73,25 +77,20 @@ class ManhattanGraph:
         if isOpenCount == 1:
             return True
 
-    def getAllOpenNeighbours(self, node):
-        x, y = node
-        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
-        return [(cX, cY) for cX, cY in neighbours if
-                self.n - 1 > 0 < cX and 0 < cY < self.n - 1 and (cX, cY) and self.Ship.nodes[(cX, cY)]['weight'] == 0]
-
-    def getEligibleNeighbours(self, node):
-        x, y = node
-        neighbours = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]
-        return [(cX, cY) for cX, cY in neighbours if
-                0 < cX < self.n - 1 and 0 < cY < self.n - 1 and (cX, cY) not in self.currently_open]
-
     def proceed(self):
+        if self.step == 1 and self.ipCells:
+            self.step = 4
+            self.currently_open = self.ipCells
+            self.dead_ends = sample_dead_1
+            for i,j in self.dead_ends:
+                self.Ship.nodes[(i,j)]['weight'] = 0
+            return
         if self.step == 1 and self.one_neighbour_set:
             cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.Ship.nodes[cell_to_expand]['weight'] = 0
             self.currently_open.add(cell_to_expand)
             self.one_neighbour_set.remove(cell_to_expand)
-            new_candidates = self.getEligibleNeighbours(cell_to_expand)
+            new_candidates = HelperService.getEligibleNeighbours(self, cell_to_expand)
             for candidate in new_candidates:
                 if candidate not in self.multi_neighbour_set:
                     if candidate in self.one_neighbour_set:
@@ -102,29 +101,36 @@ class ManhattanGraph:
             if not self.one_neighbour_set:
                 self.step = 2  # Move to dead-end detection
                 self.current_step = "Identifying Dead Ends"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
 
         elif self.step == 2:
+            HelperService.printDebug(f"Step {self.step} has begun!!")
             self.dead_ends = [node for node in self.currently_open if self.isNodeIsolated(node)]
             self.step = 3  # Move to dead-end expansion
             self.current_step = "Expanding Dead Ends"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
 
-        elif self.step == 3 and self.dead_ends:
-            num_to_expand = len(self.dead_ends) // 2
-            random.shuffle(self.dead_ends)
-            for i in range(num_to_expand):
-                dead_end = self.dead_ends[i]
-                closed_neighbors = [neighbor for neighbor in self.getEligibleNeighbours(dead_end) if
-                                    self.Ship.nodes[neighbor]['weight'] == 1]
-                if closed_neighbors:
-                    to_open = random.choice(closed_neighbors)
-                    self.Ship.nodes[to_open]['weight'] = 0
-                    self.currently_open.add(to_open)
+        elif self.step == 3:
+            if self.dead_ends:
+                HelperService.printDebug(f"Step {self.step} has begun!!")
+                num_to_expand = len(self.dead_ends) // 2
+                random.shuffle(self.dead_ends)
+                for i in range(num_to_expand):
+                    dead_end = self.dead_ends[i]
+                    closed_neighbors = [neighbor for neighbor in HelperService.getEligibleNeighbours(self, dead_end) if
+                                        self.Ship.nodes[neighbor]['weight'] == 1]
+                    if closed_neighbors:
+                        to_open = random.choice(closed_neighbors)
+                        self.Ship.nodes[to_open]['weight'] = 0
+                        self.currently_open.add(to_open)
+            else:
+                HelperService.printDebug("Dead ends not found!!")
             self.step = 4
             self.current_step = "Ship Generation Complete"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
+
         elif self.step == 4:
+            HelperService.printDebug(f"Step {self.step} has begun!!")
             opened_nodes = list(self.currently_open)
 
             fire_square = random.choice(opened_nodes)
@@ -141,22 +147,41 @@ class ManhattanGraph:
             self.curr_button_pos = button_square
 
             self.current_step = "Placed the button, fire and the bot"
-            draw_grid(self.screen, self, self.n)
+            _draw_grid_internal(self)
             self.step = 5
         elif self.step == 5:
+            HelperService.printDebug(f"Step {self.step} has begun!!")
+            self.t += 1
+            # The Task
+
+            # Step 1: Checking if the button or bot has caught fire
             if not self._checkIfButtonOrBotCaughtFire():
                 self.game_over = True
-                draw_grid(self.screen, self, self.n)
-                print("Cannot Proceed!")
+                HelperService.printDebug("Cannot Proceed!")
+                _draw_grid_internal(self)
+                return
+
+            # Step 2: Move the bot
+            robot:Robot = rg.RobotGateway(self.bot_type)
+            robot.setGraph(self)
+            path = robot.moveBot()
+            if not path:
+                self.current_step = "No Path Found! Cannot proceed further!"
+                self.game_over = True
+
+            # Step 3: Check if the button is pressed
+            if self._isButtonPressed():
+                HelperService.printDebug("The Fire Has been Extinguished!")
+                self.current_step = "The Fire Has been Extinguished!"
+                self.game_over = True
+                return
             else:
-                # The Task
-                self._moveBot()
-                if self.isButtonPressed():
-                    print("The Fire Has been Extinguished!")
-                    self.current_step = "The Fire Has been Extinguished!"
-                else:
-                    self._spreadFire()
-                draw_grid(self.screen, self, self.n)
+                if self.path is None and self.curr_button_pos != self.curr_button_pos and self.game_over:
+                    self.current_step = "No Path Found! Cannot proceed!"
+                    self.game_over = True
+                self.spreadFire()
+
+            _draw_grid_internal(self)
             '''
             • The bot decides which open neighbor to move to.
             • The bot moves to that neighbor.
@@ -166,79 +191,18 @@ class ManhattanGraph:
             '''
             pass
 
-    def _moveBot(self):
-        bot_type = 2 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
-        if bot_type == 1:
-            self._moveBot1()
-        elif bot_type == 2:
-            self._moveBot2()
-
-    def _moveBot2(self):
-        """Moves the bot one step while dynamically avoiding fire."""
-
-        # Check if the next step is blocked by fire
-        if not self.path or len(self.path) < 2 or self.fire_nodes.intersection(list(self.path)):
-            print("🔥 Fire detected ahead! Recalculating path...")
-            self.path = self.compute_path()
-
-            # Stop moving if no valid path exists
-            if not self.path or len(self.path) < 2:
-                self.game_over = True
-                print("❌ No safe path. Bot cannot move.")
-                return
-
-        # Move bot one step forward
-        self.curr_bot_pos = self.path[1]
-        self.path.pop(0)
-
-        print(f"🤖 Bot moved to {self.curr_bot_pos}")
-
-    def _moveBot1(self):
-        # Recalculate path only if it's None
-        if self.path is None:
-            self.path = self.compute_path()
-
-        # If no valid path exists, stop
-        if not self.path or len(self.path) == 0:
-            return
-
-        itrx = self.fire_nodes.intersection(set(self.path))
-        # Move to the next step in the path
-        next_pos = self.path.pop(0)
-        self.curr_bot_pos = next_pos
-
-    def calculate_path_for_bot1(self):
-        """
-        Finds a path from the bot's current position to the button, avoiding fire nodes.
-        """
-        if self.curr_bot_pos is None or self.curr_button_pos is None:
-            return []
-
-        # Create a copy of the graph excluding fire nodes
-        safe_graph = self.Ship.copy()
-        for node in self.fire_nodes | {self.initial_fire_position}:
-            if safe_graph.has_node(node):
-                safe_graph.remove_node(node)
-
-        # Compute the shortest path avoiding fire
-        try:
-            path = nx.shortest_path(safe_graph, source=self.curr_bot_pos, target=self.curr_button_pos)
-            return path[1:]  # Exclude the starting position
-        except nx.NetworkXNoPath:
-            return []  # No valid path available
-
-    def isButtonPressed(self):
+    def _isButtonPressed(self):
         return self.curr_button_pos == self.curr_bot_pos
 
-    def _spreadFire(self):
+    def spreadFire(self):
         newFireyDict = self.nodes_with_burning_neighbours.copy()
 
         for x,y in newFireyDict.keys():
             neighbors = self.nodes_with_burning_neighbours[(x,y)]
-            fire_luck = self._calculateFireProbablity(neighbors)
-            willLightUpLuck = random.random()
+            fire_luck = HelperService.calculateFireProbability(neighbors, self.q)
+            randomNumber = random.random()
 
-            isCatchFire = willLightUpLuck > fire_luck
+            isCatchFire = randomNumber < fire_luck
             if isCatchFire:
                 self.fire_nodes.add((x,y))
                 newFireyDict = self._findPotentialNeighbours((x, y), newFireyDict)
@@ -246,18 +210,18 @@ class ManhattanGraph:
 
     def _checkIfButtonOrBotCaughtFire(self):
         if self.curr_button_pos in self.fire_nodes:
-            print("Game over! The button is on fire")
+            HelperService.printDebug("Game over! The button is on fire")
             self.current_step = "Game over! The button is on fire"
             return False
         if self.curr_bot_pos in self.fire_nodes:
             self.current_step = "Game over! The Bot is on fire"
-            print("Game over! The Bot is on fire!")
+            HelperService.printDebug("Game over! The Bot is on fire!")
             return False
 
         return True
 
     def _findPotentialNeighbours(self, fireNode: tuple, existingNeighbours: dict):
-        neighbors = self.getAllOpenNeighbours(fireNode)
+        neighbors = HelperService.getAllOpenNeighbours(self.Ship, fireNode, self.n)
 
         newFireDict = existingNeighbours.copy()
         for x, y in neighbors:
@@ -267,59 +231,11 @@ class ManhattanGraph:
 
         return newFireDict
 
-    def _calculateFireProbablity(self, neighbours):
-        q = cnt.FIRE_RESISTANCE_QUOTIENT
-        probablity =  1 - math.pow(1 - q, neighbours)
-        return probablity
+def _draw_grid_internal(graph: ManhattanGraph):
+    dg.draw_grid(graph.screen, graph, graph.n)
 
-def draw_grid(screen, game, n):
-    screen.fill(cnt.WHITE)
-    font = pygame.font.SysFont(None, 30)
-    text = font.render(game.current_step, True, cnt.BLACK)
-    screen.blit(text, (20, 10))
+def getGraph(screen, bot_type, q, ipCells: set = None):
+    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, ipCells=ipCells)
+    graph.create_manhattan_graph()
 
-    for i in range(n):
-        for j in range(n):
-            x = j * (cnt.CELL_SIZE + cnt.MARGIN)
-            y = i * (cnt.CELL_SIZE + cnt.MARGIN) + cnt.HEADER_HEIGHT
-            node = (i, j)
-
-            if game.Ship.nodes[node]['weight'] == 0:
-                color = cnt.WHITE
-            else:
-                color = cnt.BLACK
-
-            if node in game.nodes_with_burning_neighbours.keys():
-                intensity = game.nodes_with_burning_neighbours[node]
-                if intensity == 1:
-                    color = cnt.ORANGE
-                elif intensity == 2:
-                    color = cnt.D1_ORANGE
-                elif intensity == 3:
-                    color = cnt.D2_ORANGE
-            if node in game.one_neighbour_set:
-                color = cnt.YELLOW
-            if node in game.dead_ends and game.step < 4:
-                color = cnt.RED
-            if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
-                color = cnt.GREEN
-            if node in (game.path or []):
-                color = cnt.YELLOW
-            if node in game.fire_nodes:
-                color = cnt.RED
-            if node == game.curr_bot_pos:
-                color = cnt.BLUE
-            if node == game.curr_button_pos:
-                color = cnt.GREEN
-
-            pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
-            pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
-
-    # Draw "Proceed" button
-    pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
-    message =  "Proceed" if game.canProceed else "Loading ..."
-    if game.game_over: message = "Restart"
-    text = font.render(message, True, cnt.WHITE)
-    screen.blit(text, (cnt.SCREEN_SIZE[0] // 2 - 30, cnt.SCREEN_SIZE[1] - 35))
-
-    pygame.display.flip()
+    return graph
