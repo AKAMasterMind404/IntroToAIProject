@@ -5,7 +5,7 @@ import graph.graph as g
 from helpers.draw_grid import draw_grid
 
 
-def ui_game(q: float, bot_type, ipCells: set = None):
+def ui_game(q: float, bot_type, isUseIpCells: set = None):
     pygame.init()
 
     screen_width, screen_height = 800, 800  # Default size
@@ -14,7 +14,7 @@ def ui_game(q: float, bot_type, ipCells: set = None):
     screen = pygame.display.set_mode(cnt.SCREEN_SIZE, pygame.RESIZABLE)
     pygame.display.set_caption("The Bot is on Fire!")
 
-    graph = g.getGraph(screen, bot_type, q, ipCells)
+    graph = g.getGraph(screen, bot_type, q, isUseIpCells)
     running = True
     steps = 0
 
@@ -37,7 +37,7 @@ def ui_game(q: float, bot_type, ipCells: set = None):
                         print("Wait for the action to be complete!")
                         pass
                     if graph.game_over:
-                        graph = g.getGraph(screen, bot_type, q, ipCells)
+                        graph = g.getGraph(screen, bot_type, q, isUseIpCells)
                         graph.initialize_ship_opening()
                         draw_grid(screen, graph, graph.n)
                         graph.proceed()

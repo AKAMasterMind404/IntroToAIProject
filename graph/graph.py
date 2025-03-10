@@ -3,13 +3,13 @@ import random
 import constants as cnt
 import gateways.robotgateway as rg
 import helpers.draw_grid as dg
-from graph.sample.sample1 import sample_dead_1
+from graph.sample.sample1 import dead_ends_1, currently_open_1
 from helpers.generic import HelperService
 from robot.robot import Robot
 
 
 class ManhattanGraph:
-    def __init__(self, screen, n, q, bot_type, ipCells = None):
+    def __init__(self, screen, n, q, bot_type, isUseIpCells = None):
         self.n = n
         self.q = q
         self.bot_type = bot_type
@@ -36,7 +36,7 @@ class ManhattanGraph:
         self.beenTo = []
         self.fire_forecast = []
         self.adj_fire_forecast = []
-        self.ipCells = ipCells
+        self.isUseIpCells = isUseIpCells
         self.t = 0
 
     def create_manhattan_graph(self):
@@ -53,8 +53,8 @@ class ManhattanGraph:
         if self.open_ship_initialized:
             return
 
-        if self.ipCells:
-            xCord, yCord = random.choice(list(self.ipCells))
+        if self.isUseIpCells:
+            xCord, yCord = random.choice(currently_open_1)
         else:
             xCord = random.randint(1, self.n - 2)
             yCord = random.randint(1, self.n - 2)
@@ -78,10 +78,10 @@ class ManhattanGraph:
             return True
 
     def proceed(self):
-        if self.step == 1 and self.ipCells:
+        if self.step == 1 and self.isUseIpCells:
             self.step = 4
-            self.currently_open = self.ipCells
-            self.dead_ends = sample_dead_1
+            self.currently_open = currently_open_1
+            self.dead_ends = dead_ends_1
             for i,j in self.dead_ends:
                 self.Ship.nodes[(i,j)]['weight'] = 0
             return
@@ -234,8 +234,8 @@ class ManhattanGraph:
 def _draw_grid_internal(graph: ManhattanGraph):
     dg.draw_grid(graph.screen, graph, graph.n)
 
-def getGraph(screen, bot_type, q, ipCells: set = None):
-    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, ipCells=ipCells)
+def getGraph(screen, bot_type, q, isUseIpCells: bool = False):
+    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, isUseIpCells=isUseIpCells)
     graph.create_manhattan_graph()
 
     return graph

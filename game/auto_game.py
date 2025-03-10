@@ -1,8 +1,8 @@
 import constants as cnt
 from graph.graph import getGraph
 
-def auto_game(q = cnt.FLAMMABILITY, bot_type: int = 1, ipCells: set = None):
-    graph = getGraph(None, bot_type, q, ipCells)
+def auto_game(q = cnt.FLAMMABILITY, bot_type: int = 1, isUseIPCells: set = None):
+    graph = getGraph(None, bot_type, q, isUseIPCells)
     graph.initialize_ship_opening()
     graph.canProceed = False
     while graph.step < 5:

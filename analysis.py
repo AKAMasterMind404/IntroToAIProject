@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from constants import IS_VARIABLE_GRAPH
 from game.auto_game import auto_game
-from graph.sample.sample1 import sample_ip_1
+from graph.sample.sample1 import currently_open_1
 
 
 class Result:
@@ -150,8 +150,7 @@ class Result:
             for bot in [1,2,3]:
                 for i in range(recordsPerBot):
                     qXRange = random.choice(qRange)
-                    ipCells: set = None if IS_VARIABLE_GRAPH else sample_ip_1
-                    g = auto_game(q=qXRange, bot_type=bot, ipCells=ipCells)
+                    g = auto_game(q=qXRange, bot_type=bot, isUseIPCells=IS_VARIABLE_GRAPH)
                     q, isFireExtinguished, bot_type = g.q, g.isFireExtinguished, g.bot_type
                     Result.write(f'bot{bot_type}', f'{q}, {isFireExtinguished}, {bot_type}')
                 print(f"Finished q ranges from {qRange} for bot {bot}")
@@ -196,8 +195,8 @@ class Result:
                 missing = target_count - existing_counts.get((bot, q), 0)
 
                 for _ in range(missing):
-                    ipCells = None if is_variable_graph else sample_ip_1
-                    g = auto_game(q=q, bot_type=bot, ipCells=ipCells)
+                    isUseIpCells = None if is_variable_graph else currently_open_1
+                    g = auto_game(q=q, bot_type=bot, isUseIPCells=isUseIpCells)
                     result = f"{g.q}, {g.isFireExtinguished}, {g.bot_type}\n"
 
                     # Append to file

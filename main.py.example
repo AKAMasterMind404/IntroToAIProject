@@ -1,12 +1,12 @@
 from game.ui_game import ui_game
-from graph.sample.sample1 import sample_ip_1
+from game.winnability import winnability
 from analysis import Result
 import constants as cnt
 
 if __name__ == "__main__":
     IS_DATA = False
     if IS_DATA:
-        isPlot = False
+        isPlot = True
         if isPlot:
             Result.analyze_all_bots()
         else:
@@ -15,5 +15,5 @@ if __name__ == "__main__":
             Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
             print("Data gen finished....")
     else:
-        ipCells:set = None if cnt.IS_VARIABLE_GRAPH else sample_ip_1
-        g = ui_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT, ipCells=ipCells)
+        g = ui_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT)
+        winnability()

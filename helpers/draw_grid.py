@@ -29,9 +29,9 @@ def draw_grid(screen, game, n):
                     color = cnt.D2_ORANGE
             if node in game.one_neighbour_set:
                 color = cnt.YELLOW
-            if node in game.dead_ends and game.step < 4:
+            if node in game.dead_ends_1 and game.step < 4:
                 color = cnt.RED
-            if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
+            if node in game.currently_open_1 and (node not in game.dead_ends_1 and game.step < 3):
                 color = cnt.GREEN
             if node in (game.path or game.beenTo):
                 color = cnt.YELLOW
