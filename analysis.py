@@ -1,5 +1,7 @@
 import os
 import random
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -155,87 +157,51 @@ class Result:
                 print(f"Finished q ranges from {qRange} for bot {bot}")
 
     @staticmethod
-    def fillRecords(recordsToFill, dataMap: dict):
-        qRange1 = [0, 0.1, 0.2, 0.3]
-        qRange2 = [0.4, 0.5, 0.6]
-        qRange3 = [0.7, 0.8, 0.9, 1]
+    def get_existing_counts(is_variable_graph):
+        """ Reads existing data files and counts records for each (bot, q) pair. """
+        folder = "variable-graph-result" if is_variable_graph else "same-graph-result"
+        counts = defaultdict(int)
 
-        maxKey = list(dataMap.keys())[-1]
-        maxVal = dataMap[maxKey]
+        for bot in range(1, 5):
+            file_path = f"{folder}/bot{bot}.txt"
+            try:
+                with open(file_path, "r") as f:
+                    for line in f:
+                        parts = line.strip().split(", ")
+                        if len(parts) == 3:
+                            q = float(parts[0])
+                            counts[(bot, q)] += 1
+            except FileNotFoundError:
+                pass  # If file doesn't exist, treat as zero records
 
-        for bQ in dataMap.keys():
-            bVal, qVal = bQ.split("_")
-            bVal = int(bVal[1])
-            qVal = int(qVal[1])
-
-            qxRange = qRange1
-            if qVal == 1:
-                qxRange = qRange1
-            elif qVal == 2:
-                qxRange = qRange2
-            elif qVal == 3:
-                qxRange = qRange3
-
-            curr = dataMap.get(f"b{bVal}_q{qVal}")
-            recBehind = max(maxVal - curr, 0)
-            toDo = max(recBehind, recordsToFill//4)
-            done = 0
-
-            while toDo > 0 and done <= recordsToFill:
-                g = auto_game(q=random.choice(qxRange), bot_type=bVal)
-                q_res, isFireExtinguished, bot_type_res = g.q, g.isFireExtinguished, g.bot_type
-                Result.write(f'bot{bot_type_res}', f'{q_res}, {isFireExtinguished}, {bot_type_res}')
-
-                toDo -= 1
-                done += 1
+        return counts
 
     @staticmethod
-    def getFillRecordQuantity():
-        folderName = 'variable-graph-result' if IS_VARIABLE_GRAPH else 'same-graph-result'
-        qRange1 = [0, 0.1, 0.2, 0.3]
-        qRange2 = [0.4, 0.5, 0.6]
-        qRange3 = [0.7, 0.8, 0.9, 1]
+    def generate_uniform_data(is_variable_graph, num_records):
+        """ Ensures uniform distribution of data across all bots and q values. """
+        folder = "variable-graph-result" if is_variable_graph else "same-graph-result"
+        existing_counts = Result.get_existing_counts(is_variable_graph)
 
-        bot1Records, bot2Records, bot3Records, bot4Records = list(), list(), list(), list()
-        try:
-            bot1Records = open(f"{folderName}/bot1.txt", 'r').readlines()
-            bot2Records = open(f"{folderName}/bot2.txt", 'r').readlines()
-            bot3Records = open(f"{folderName}/bot3.txt", 'r').readlines()
-            bot4Records = open(f"{folderName}/bot4.txt", 'r').readlines()
-        except FileNotFoundError:
-            pass
+        q_values = [round(i * 0.1, 1) for i in range(1, 11)]  # 0.1 to 1.0
+        bots = [1, 2, 3, 4]
 
-        numDict = dict()
-        for bot in [1, 2, 3, 4]:
-            records = None
-            if bot == 1:
-                records = bot1Records
-            elif bot == 2:
-                records = bot2Records
-            elif bot == 3:
-                records = bot3Records
-            elif bot == 4:
-                records = bot4Records
+        # Determine max existing count for any (bot, q) pair
+        max_count = max(existing_counts.values(), default=0)
 
-            q1Rec, q2Rec, q3Rec = 0, 0, 0
-            for rec in records:
-                if rec.strip("\n "):
-                    q, res, _ = rec.split(",")
-                    q = float(q)
-                    if q in qRange1:
-                        q1Rec += 1
-                    elif q in qRange2:
-                        q2Rec += 1
-                    elif q in qRange3:
-                        q3Rec += 1
+        # If already uniform, generate 'num_records' for each bot, q
+        target_count = max_count + num_records if max_count > 0 else num_records
 
-            for qR in [1, 2, 3]:
-                data = None
-                if qR == 1: data = q1Rec
-                if qR == 2: data = q2Rec
-                if qR == 3: data = q3Rec
-                numDict[f'b{bot}_q{qR}'] = data
-                pass
+        for bot in bots:
+            for q in q_values:
+                missing = target_count - existing_counts.get((bot, q), 0)
 
-        result = dict(sorted(numDict.items(), key=lambda item: item[1]))
-        return result
+                for _ in range(missing):
+                    ipCells = None if is_variable_graph else sample_ip_1
+                    g = auto_game(q=q, bot_type=bot, ipCells=ipCells)
+                    result = f"{g.q}, {g.isFireExtinguished}, {g.bot_type}\n"
+
+                    # Append to file
+                    with open(f"{folder}/bot{bot}.txt", "a") as f:
+                        f.write(result)
+
+        print(f"Data generation complete. Each bot now has {target_count} records per q.")
