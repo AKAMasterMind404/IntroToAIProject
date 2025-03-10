@@ -24,7 +24,7 @@ class HelperService:
     def getEligibleNeighbours(graph, node: tuple):
         ngh = HelperService.neighbours(node)
         return [(cX, cY) for cX, cY in ngh if
-                0 < cX < graph.n - 1 and 0 < cY < graph.n - 1 and (cX, cY) not in graph.currently_open_1]
+                0 < cX < graph.n - 1 and 0 < cY < graph.n - 1 and (cX, cY) not in graph.currently_open]
 
     @staticmethod
     def calculateFireProbability(neighbours, q):

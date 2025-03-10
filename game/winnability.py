@@ -7,7 +7,7 @@ def winnability(q = cnt.FLAMMABILITY, bot_type: int = 1):
     graph = getGraph(None, bot_type, q, currently_open_1)
 
     if not cnt.IS_VARIABLE_GRAPH:
-        graph.currently_open_1 = currently_open_1
+        graph.currently_open = currently_open_1
         graph.dead_ends_1 = dead_ends_1
 
     while graph.step < 5:

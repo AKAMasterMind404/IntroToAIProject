@@ -3,7 +3,6 @@ import random
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from constants import IS_VARIABLE_GRAPH
 from game.auto_game import auto_game
@@ -26,7 +25,6 @@ class Result:
             bot_types = [1, 2, 3, 4]
         folderName = 'variable-graph-result' if IS_VARIABLE_GRAPH else 'same-graph-result'
         q_values = [i / 10 for i in range(11)]  # q values from 0.0 to 1.0
-        ranges = {str(q): q for q in q_values}
 
         # Initialize data structures
         win_counts = {bot: {q: 0 for q in q_values} for bot in bot_types}
