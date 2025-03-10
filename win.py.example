@@ -1,12 +1,11 @@
-from analysis import Result
-import constants as cnt
 from graph.winnability_sim import Simulation
 
 if __name__ == "__main__":
-    if cnt.IS_PLOT_WINNABILITY:
-        data = Simulation.generate_uniform_data_winnability(5)
+    isGenerateData = True
+    if not isGenerateData:
+        data = Simulation.getStoredData()
         Simulation.plot_winnability(data)
     else:
-        recordsToFill = 100
-        Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
+        recordsToFill = 5
+        data = Simulation.generate_uniform_data_winnability(recordsToFill)
     print("Data gen finished....")

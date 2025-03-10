@@ -12,9 +12,8 @@ class Simulation:
         winnability_data = defaultdict(list)  # {q: [wins]}
 
         for bot in (1, 2, 3, 4):
-            file_path = os.path.join(os.getcwd(), "..", f"bot{bot}.txt")
-
-            with open(file_path, "a") as f:
+            file_path = os.path.join(folder, f"bot{bot}.txt")
+            with open(file_path, "a+") as f:
                 for q in range(0, 10, 1):
                     _q = q / 10  # Convert q to decimal (0.0 to 0.9)
 
@@ -29,7 +28,32 @@ class Simulation:
                         f.write(f"{_q}, {result}, Bot{bot}\n")
                         winnability_data[_q].append(result)
 
-        return winnability_data  # Return data for further processing
+        return winnability_data
+
+    @staticmethod
+    def getStoredData():
+        """Reads previously stored winnability data from files."""
+        folder = "winnability-result"
+        winnability_data = defaultdict(list)  # {q: [wins]}
+
+        if not os.path.exists(folder):
+            print("No stored data found.")
+            return winnability_data
+
+        for bot in (1, 2, 3, 4):
+            file_path = os.path.join(folder, f"bot{bot}.txt")
+
+            if not os.path.exists(file_path):
+                continue  # Skip missing files
+
+            with open(file_path, "r") as f:
+                for line in f:
+                    q, win, _ = line.strip().split(", ")
+                    q = float(q)
+                    win = win == "True"  # Convert string to Boolean
+                    winnability_data[q].append(win)
+
+        return winnability_data
 
     @staticmethod
     def compute_winnability(data):
