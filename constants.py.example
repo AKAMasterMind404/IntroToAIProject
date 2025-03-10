@@ -1,7 +1,8 @@
+ALPHA = 0.2
 K_DEBUG_MODE = False
-CURRENT_BOT = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
-FIRE_RESISTANCE_QUOTIENT = 0 # 1 = MOST RESISTANT, 0 = LEAST RESISTANT
-TIME_RATE = 0.1 # SECONDS OF WAIT BETWEEN EACH T
+CURRENT_BOT = 4 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+FLAMABILITY = 0.7 # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
+TIME_RATE = 0.4 # SECONDS OF WAIT BETWEEN EACH T
 
 GRID_SIZE = 40  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
@@ -20,6 +21,8 @@ D3_ORANGE = (255, 100, 0)
 GREEN = (0, 255, 0)
 GRAY = (99, 102, 106)
 BLUE = (0, 100, 255)
+PURPLE = (128,0,128)
+LIGHT_BLUE = (173, 216, 230)
 
 def update_grid_constants(n, screen_width, screen_height):
     global CELL_SIZE, SCREEN_SIZE

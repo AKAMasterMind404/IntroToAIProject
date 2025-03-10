@@ -2,6 +2,7 @@ import random
 import matplotlib.pyplot as plt
 import pandas as pd
 from game.auto_game import auto_game
+from graph.sample.sample1 import sample_ip_1
 
 
 class Result:
@@ -83,7 +84,8 @@ class Result:
             for bot in [4]:
                 for i in range(recordsPerBot):
                     qXRange = random.choice(qRange)
-                    g = auto_game(q=qXRange, bot_type=bot)
+                    ipCells: set = sample_ip_1
+                    g = auto_game(q=qXRange, bot_type=bot, ipCells=ipCells)
                     q, isFireExtinguished, bot_type = g.q, g.isFireExtinguished, g.bot_type
                     Result.write(f'bot{bot_type}', f'{q}, {isFireExtinguished}, {bot_type}')
                 print(f"Finished q ranges from {qRange} for bot {bot}")

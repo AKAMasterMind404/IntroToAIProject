@@ -3,12 +3,13 @@ import random
 import constants as cnt
 import gateways.robotgateway as rg
 import helpers.draw_grid as dg
+from graph.sample.sample1 import sample_dead_1
 from helpers.generic import HelperService
 from robot.robot import Robot
 
 
 class ManhattanGraph:
-    def __init__(self, screen, n, q, bot_type):
+    def __init__(self, screen, n, q, bot_type, ipCells = None):
         self.n = n
         self.q = q
         self.bot_type = bot_type
@@ -35,6 +36,7 @@ class ManhattanGraph:
         self.beenTo = []
         self.fire_forecast = []
         self.adj_fire_forecast = []
+        self.ipCells = ipCells
         self.t = 0
 
     def create_manhattan_graph(self):
@@ -50,11 +52,15 @@ class ManhattanGraph:
     def initialize_ship_opening(self):
         if self.open_ship_initialized:
             return
-        xCord = random.randint(1, self.n - 2)
-        yCord = random.randint(1, self.n - 2)
-        self.Ship.nodes[(xCord, yCord)]['weight'] = 0
+
+        if self.ipCells:
+            xCord, yCord = random.choice(list(self.ipCells))
+        else:
+            xCord = random.randint(1, self.n - 2)
+            yCord = random.randint(1, self.n - 2)
+            self.one_neighbour_set = set(HelperService.getEligibleNeighbours(self, (xCord, yCord)))
         self.currently_open.add((xCord, yCord))
-        self.one_neighbour_set = set(HelperService.getEligibleNeighbours(self, (xCord, yCord)))
+        self.Ship.nodes[(xCord, yCord)]['weight'] = 0
         self.open_ship_initialized = True
         _draw_grid_internal(self)
 
@@ -72,6 +78,13 @@ class ManhattanGraph:
             return True
 
     def proceed(self):
+        if self.step == 1 and self.ipCells:
+            self.step = 4
+            self.currently_open = self.ipCells
+            self.dead_ends = sample_dead_1
+            for i,j in self.dead_ends:
+                self.Ship.nodes[(i,j)]['weight'] = 0
+            return
         if self.step == 1 and self.one_neighbour_set:
             cell_to_expand = random.choice(list(self.one_neighbour_set))
             self.Ship.nodes[cell_to_expand]['weight'] = 0
@@ -222,7 +235,7 @@ def _draw_grid_internal(graph: ManhattanGraph):
     dg.draw_grid(graph.screen, graph, graph.n)
 
 def getGraph(screen, bot_type, q, ipCells: set = None):
-    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type)
+    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, ipCells=ipCells)
     graph.create_manhattan_graph()
 
     return graph
