@@ -3,13 +3,13 @@ import random
 import constants as cnt
 import gateways.robotgateway as rg
 import helpers.draw_grid as dg
-from graph.sample.sample1 import dead_ends_1, currently_open_1
+from graph.sample.sample1 import dead_ends_1, currently_open_1, fire_pos_1, bot_pos_1, button_pos_1
 from helpers.generic import HelperService
 from robot.robot import Robot
 
 
 class ManhattanGraph:
-    def __init__(self, screen, n, q, bot_type, isUseIpCells = None):
+    def __init__(self, screen, n, q, bot_type, isUseIpCells:bool = False, isUsePresetPos: bool = False):
         self.n = n
         self.q = q
         self.bot_type = bot_type
@@ -37,6 +37,7 @@ class ManhattanGraph:
         self.fire_forecast = []
         self.adj_fire_forecast = []
         self.isUseIpCells = isUseIpCells
+        self.isUsePresetPos = isUsePresetPos
         self.t = 0
 
     def create_manhattan_graph(self):
@@ -54,7 +55,7 @@ class ManhattanGraph:
             return
 
         if self.isUseIpCells:
-            xCord, yCord = random.choice(currently_open_1)
+            xCord, yCord = random.choice(list(currently_open_1))
         else:
             xCord = random.randint(1, self.n - 2)
             yCord = random.randint(1, self.n - 2)
@@ -133,17 +134,22 @@ class ManhattanGraph:
             HelperService.printDebug(f"Step {self.step} has begun!!")
             opened_nodes = list(self.currently_open)
 
-            fire_square = random.choice(opened_nodes)
+            if self.isUsePresetPos:
+                fire_square, bot_square, button_square = fire_pos_1, bot_pos_1, button_pos_1
+            else:
+                fire_square, bot_square, button_square = random.sample(opened_nodes, 3)
+
+            # Opening fire_square
             opened_nodes.remove(fire_square)
             self.initial_fire_position = fire_square
             self.fire_nodes.add(fire_square)
             self.nodes_with_burning_neighbours = self._findPotentialNeighbours(fire_square, self.nodes_with_burning_neighbours)
 
-            bot_square = random.choice(opened_nodes)
+            # Opening bot_square
             self.curr_bot_pos = bot_square
             opened_nodes.remove(bot_square)
 
-            button_square = random.choice(opened_nodes)
+            # Opening button_square
             self.curr_button_pos = button_square
 
             self.current_step = "Placed the button, fire and the bot"
@@ -234,8 +240,8 @@ class ManhattanGraph:
 def _draw_grid_internal(graph: ManhattanGraph):
     dg.draw_grid(graph.screen, graph, graph.n)
 
-def getGraph(screen, bot_type, q, isUseIpCells: bool = False):
-    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, isUseIpCells=isUseIpCells)
+def getGraph(screen, bot_type, q, isUseIpCells: bool = False, isUsePresetPos: bool = False):
+    graph = ManhattanGraph(screen, cnt.GRID_SIZE, q, bot_type=bot_type, isUseIpCells=isUseIpCells, isUsePresetPos=isUsePresetPos)
     graph.create_manhattan_graph()
 
     return graph

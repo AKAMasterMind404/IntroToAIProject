@@ -148,7 +148,7 @@ class Result:
             for bot in [1,2,3]:
                 for i in range(recordsPerBot):
                     qXRange = random.choice(qRange)
-                    g = auto_game(q=qXRange, bot_type=bot, isUseIPCells=IS_VARIABLE_GRAPH)
+                    g = auto_game(q=qXRange, bot_type=bot, isUseIpCells=IS_VARIABLE_GRAPH)
                     q, isFireExtinguished, bot_type = g.q, g.isFireExtinguished, g.bot_type
                     Result.write(f'bot{bot_type}', f'{q}, {isFireExtinguished}, {bot_type}')
                 print(f"Finished q ranges from {qRange} for bot {bot}")
@@ -194,7 +194,7 @@ class Result:
 
                 for _ in range(missing):
                     isUseIpCells = None if is_variable_graph else currently_open_1
-                    g = auto_game(q=q, bot_type=bot, isUseIPCells=isUseIpCells)
+                    g = auto_game(q=q, bot_type=bot, isUseIpCells=isUseIpCells)
                     result = f"{g.q}, {g.isFireExtinguished}, {g.bot_type}\n"
 
                     # Append to file
