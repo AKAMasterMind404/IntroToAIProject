@@ -1,3 +1,4 @@
+import os
 import random
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,7 +9,7 @@ from graph.sample.sample1 import sample_ip_1
 class Result:
     @staticmethod
     def write(filename: str, contents: str):
-        file_path = f"result/{filename}.txt"  # Relative path from root/main.py
+        file_path = f"{os.getcwd()}variable-graph-result/{filename}.txt"  # Relative path from root/main.py
 
         # Writing to the file
         with open(file_path, "a+") as file:
@@ -16,7 +17,7 @@ class Result:
 
     @staticmethod
     def botWiseAnalysis(botType):
-        file_path = f"result/bot{botType}.txt"  # File path
+        file_path = f"{os.getcwd()}variable-graph-result/bot{botType}.txt"  # File path
 
         # Read the file
         data = pd.read_csv(file_path, header=None, names=['q', 'win', 'bot_type'])
@@ -133,10 +134,10 @@ class Result:
 
         bot1Records, bot2Records, bot3Records, bot4Records = list(), list(), list(), list()
         try:
-            bot1Records = open("result/bot1.txt", 'r').readlines()
-            bot2Records = open("result/bot2.txt", 'r').readlines()
-            bot3Records = open("result/bot3.txt", 'r').readlines()
-            bot4Records = open("result/bot4.txt", 'r').readlines()
+            bot1Records = open("variable-graph-result/bot1.txt", 'r').readlines()
+            bot2Records = open("variable-graph-result/bot2.txt", 'r').readlines()
+            bot3Records = open("variable-graph-result/bot3.txt", 'r').readlines()
+            bot4Records = open("variable-graph-result/bot4.txt", 'r').readlines()
         except FileNotFoundError:
             pass
 

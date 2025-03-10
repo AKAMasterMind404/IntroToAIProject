@@ -5,10 +5,10 @@
 /graph/__pycache__
 /__pycache__
 /graph/__pycache__
-result/bot1.txt
-result/bot2.txt
-result/bot3.txt
+variable-graph-result/bot1.txt
+variable-graph-result/bot2.txt
+variable-graph-result/bot3.txt
 constants.py
 main.py
-result/bot4.txt
+variable-graph-result/bot4.txt
 /graph/sample/__pycache__
