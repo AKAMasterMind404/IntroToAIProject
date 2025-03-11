@@ -18,6 +18,15 @@ def ui_game(q: float, bot_type, isUseIpCells: bool = False, isUsePresetPos: bool
     running = True
     steps = 0
 
+    # Graph lifecycle -
+    # 1. create_manhattan_graph
+    # 2. initialize_ship_opening
+    # 3. Open up the Ship
+    # 4. Open up dead ends if any
+    # 5. Randomly Spawn Bot, Button and Fire
+    # 6. Run the simulation, check for game stopping conditions
+    # 7. Return the time taken, q, bot info and whether fire was extinguished or not
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

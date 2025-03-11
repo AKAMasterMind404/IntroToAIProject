@@ -10,35 +10,33 @@ from robot.robot import Robot
 
 class ManhattanGraph:
     def __init__(self, screen, n, q, bot_type, isUseIpCells:bool = False, isUsePresetPos: bool = False):
-        self.n = n
-        self.q = q
-        self.bot_type = bot_type
-        self.game_over = False
-        self.Ship = nx.Graph()
-        self.start = (0, 0)
-        self.goal = (n - 1, n - 1)
-        self.path = None
-        self.canProceed = True
-        self.screen = screen
-        self.current_step = "Ship Expansion"
-        self.one_neighbour_set = set()
-        self.currently_open = set()
-        self.multi_neighbour_set = set()
-        self.dead_ends = []
+        self.n = n # Dimension of rhe 2d graph
+        self.q = q # Flammability
+        self.bot_type = bot_type # bot type
+        self.game_over = False # Indicates whether game may or may not be proceeded
+        self.Ship = nx.Graph() # Graph nodes represented using networkx.Graph object
+        self.path = None # Path outlined by the bot
+        self.canProceed = True # Indicates whether simulation is already under progress
+        self.screen = screen # pygame.screen - May or may not be None
+        self.current_step = "Ship Expansion" # Display Label
+        self.one_neighbour_set = set() # Set of nodes with one 'open' cell, # Zero indicates 'open' and One indicates 'close'
+        self.currently_open = set() # Nodes that are 'open', # Zero indicates 'open' and One indicates 'close'
+        self.multi_neighbour_set = set() # Converse of one_neighbour_set
+        self.dead_ends = [] # cells that have 3 closed cells around them
         self.step = 1  # Track algorithm step
-        self.open_ship_initialized = False
-        self.fire_nodes = set()
-        self.nodes_with_burning_neighbours = dict()
-        self.curr_bot_pos = None
-        self.initial_fire_position = None
-        self.curr_button_pos = None
-        self.isFireExtinguished = None
-        self.beenTo = []
-        self.fire_forecast = []
-        self.adj_fire_forecast = []
-        self.isUseIpCells = isUseIpCells
-        self.isUsePresetPos = isUsePresetPos
-        self.t = 0
+        self.open_ship_initialized = False # Indicates whether step is completed or not, useful in preset metric graphs
+        self.fire_nodes = set() # Nodes currently under fire
+        self.nodes_with_burning_neighbours = dict() # Nodes that are adjacent to atleast one node on 'fire'
+        self.curr_bot_pos = None # Current position of bot
+        self.initial_fire_position = None # Initial position of fire
+        self.curr_button_pos = None # Current and final button position
+        self.isFireExtinguished = None # Variable that checks whether bot has extinguished the fire or not
+        self.beenTo = [] # Tracks the footsteps of bot
+        self.fire_forecast = [] # A set of cells that could be on fire in the future
+        self.adj_fire_forecast = [] # A set of cells that could be adjacent to nodes on fire in the future
+        self.isUseIpCells = isUseIpCells # A boolean flag indicating opened cells are already defined
+        self.isUsePresetPos = isUsePresetPos # A boolean flag indicating fire, bot and button positions are already defined
+        self.t = 0 # Time step, calculates how many times proceed() ahs been called. Also, a measure for no of steps taken by bot
 
     def create_manhattan_graph(self):
         for i in range(self.n):
@@ -79,7 +77,10 @@ class ManhattanGraph:
             return True
 
     def proceed(self):
+        # Everytime proceed is called, one timestep is increased.
+        # Timestep counting begins when grid is set, and bot-button-fire is initialized
         if self.step == 1 and self.isUseIpCells:
+            # Handles pre-defined graph values
             self.step = 4
             self.currently_open = currently_open_1
             self.dead_ends = dead_ends_1
@@ -87,10 +88,13 @@ class ManhattanGraph:
                 self.Ship.nodes[(i,j)]['weight'] = 0
             return
         if self.step == 1 and self.one_neighbour_set:
+            # Chose one cell to expand
             cell_to_expand = random.choice(list(self.one_neighbour_set))
-            self.Ship.nodes[cell_to_expand]['weight'] = 0
+            self.Ship.nodes[cell_to_expand]['weight'] = 0 # Zero indicates 'open' and One indicates 'close'
             self.currently_open.add(cell_to_expand)
             self.one_neighbour_set.remove(cell_to_expand)
+            # one_neighbour_set is a set of nodes that are surrounded by just one open cell
+
             new_candidates = HelperService.getEligibleNeighbours(self, cell_to_expand)
             for candidate in new_candidates:
                 if candidate not in self.multi_neighbour_set:
@@ -100,6 +104,7 @@ class ManhattanGraph:
                     else:
                         self.one_neighbour_set.add(candidate)
             if not self.one_neighbour_set:
+                # We ran out of cells that we can expand into
                 self.step = 2  # Move to dead-end detection
                 self.current_step = "Identifying Dead Ends"
             _draw_grid_internal(self)
@@ -112,6 +117,7 @@ class ManhattanGraph:
             _draw_grid_internal(self)
 
         elif self.step == 3:
+            # We randomly open one closed neighbour of half of the dead end cells
             if self.dead_ends:
                 HelperService.printDebug(f"Step {self.step} has begun!!")
                 num_to_expand = len(self.dead_ends) // 2
@@ -126,10 +132,10 @@ class ManhattanGraph:
                         self.currently_open.add(to_open)
             else:
                 HelperService.printDebug("Dead ends not found!!")
+            # Ship Generation is Complete!
             self.step = 4
             self.current_step = "Ship Generation Complete"
             _draw_grid_internal(self)
-
         elif self.step == 4:
             HelperService.printDebug(f"Step {self.step} has begun!!")
             opened_nodes = list(self.currently_open)

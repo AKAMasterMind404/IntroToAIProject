@@ -1,7 +1,5 @@
 import os
-import random
 from collections import defaultdict
-
 import matplotlib.pyplot as plt
 import pandas as pd
 from constants import IS_VARIABLE_GRAPH
