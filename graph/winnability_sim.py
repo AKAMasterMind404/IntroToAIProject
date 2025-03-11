@@ -7,15 +7,8 @@ from game.auto_game import auto_game
 class Simulation:
     @staticmethod
     def generate_uniform_data_winnability(num_records):
-        """
-        Generates data for all bots and tracks winnability.
-
-        Args:
-            num_records (int): Number of simulations to run for each q.
-
-        Returns:
-            dict: A dictionary mapping q to a list of tuples (bot, result).
-        """
+        # Givem num_records, runs num_records simulations for all q between 0-1 for each bot
+        # Returns dictionary mapping q to a list of tuples => bot, result
         folder = "winnability-result"
         os.makedirs(folder, exist_ok=True)
         winnability_data = defaultdict(list)
@@ -45,7 +38,7 @@ class Simulation:
 
     @staticmethod
     def getStoredData():
-        """Reads previously stored winnability data from files."""
+        # Reads previously stored data from files
         folder = "winnability-result"
         winnability_data = defaultdict(list)  # {q: [is_winnable]}
 
@@ -55,30 +48,20 @@ class Simulation:
 
         for bot in (1, 2, 3, 4):
             file_path = os.path.join(folder, f"bot{bot}.txt")
+            if not os.path.exists(file_path): continue
 
-            if not os.path.exists(file_path):
-                continue  # Skip missing files
-
-            with open(file_path, "r") as f:
-                for line in f:
-                    q, is_winnable, bot_name = line.strip().split(", ")
-                    q = float(q)
-                    is_winnable = is_winnable == "True"
-                    winnability_data[q].append(is_winnable)
+            f = open(file_path, "r")
+            for line in f:
+                q, is_winnable, bot_name = line.strip().split(", ")
+                q = float(q)
+                is_winnable = is_winnable == "True"
+                winnability_data[q].append(is_winnable)
 
         return winnability_data
 
     @staticmethod
     def compute_winnability_frequency(winnability_data):
-        """
-        Computes the frequency of winnable simulations as a function of q.
-
-        Args:
-            winnability_data (dict): A dictionary mapping q to a list of is_winnable values.
-
-        Returns:
-            dict: A dictionary mapping q to the frequency of winnable simulations.
-        """
+        # Calculates the frequency of winnable simulations as a function of q.
         winnability_frequency = {}
         for q, is_winnable_list in winnability_data.items():
             winnability_frequency[q] = sum(is_winnable_list) / len(is_winnable_list)
@@ -86,12 +69,7 @@ class Simulation:
 
     @staticmethod
     def plot_winnability_frequency(winnability_frequency):
-        """
-        Plots the frequency of winnable simulations as a function of q.
-
-        Args:
-            winnability_frequency (dict): A dictionary mapping q to the frequency of winnable simulations.
-        """
+        # Plots the frequency of winnable simulations as a function of q.
         q_values = sorted(winnability_frequency.keys())
         frequencies = [winnability_frequency[q] for q in q_values]
 
@@ -107,15 +85,7 @@ class Simulation:
 
     @staticmethod
     def read_bot_data(file_path):
-        """
-        Reads bot data from a file.
-
-        Args:
-            file_path (str): Path to the bot data file.
-
-        Returns:
-            list: A list of tuples (q, is_winnable, bot).
-        """
+        # Reads bot data from a file.
         data = []
         fullPath = os.path.join(os.getcwd(), "winnability-result", file_path)
         with open(fullPath, "r") as file:
@@ -126,15 +96,7 @@ class Simulation:
 
     @staticmethod
     def compute_winnability_per_bot(bot_files):
-        """
-        Computes per-bot win frequency, considering only winnable simulations.
-
-        Args:
-            bot_files (list): List of file paths for bot data.
-
-        Returns:
-            dict: A dictionary mapping bot IDs to their success rates per q.
-        """
+        # Computes per-bot win frequency, considering only winnable simulations.
         winnable_counts = defaultdict(int)  # {q: total winnable cases}
         bot_success_rates = defaultdict(lambda: defaultdict(float))  # {bot: {q: success rate}}
 
@@ -163,12 +125,7 @@ class Simulation:
 
     @staticmethod
     def plot_bot_success_rates(bot_success_rates):
-        """
-        Plots each bot's success rate in winnable simulations.
-
-        Args:
-            bot_success_rates (dict): A dictionary mapping bot IDs to their success rates per q.
-        """
+        # Plots each bot's success rate in winnable simulations.
         plt.figure(figsize=(10, 5))
 
         for bot, success_rates in bot_success_rates.items():
@@ -178,12 +135,7 @@ class Simulation:
             if rates:  # Only plot if data exists
                 plt.plot(q_values, rates, marker="o", linestyle="-", label=f"{bot}")
 
-        # Check if any data was plotted
-        if plt.gca().has_data():
-            plt.legend()
-        else:
-            print("Warning: No data to plot.")
-
+        plt.legend()
         plt.xlabel("Fire Spread Probability (q)")
         plt.ylabel("Win Rate Among Winnable Simulations")
         plt.title("Bot Performance in Winnable Simulations")
