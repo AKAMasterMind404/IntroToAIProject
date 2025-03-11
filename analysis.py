@@ -20,7 +20,7 @@ class Result:
             file.write(f"{contents}\n")
 
     @staticmethod
-    def analyze_all_bots(bot_types=None):
+    def analyzeBotWinVsQ(bot_types=None):
         if bot_types is None:
             bot_types = [1, 2, 3, 4]
         folderName = 'variable-graph-result' if IS_VARIABLE_GRAPH else 'same-graph-result'
@@ -38,7 +38,7 @@ class Result:
                 continue
 
             # Read CSV
-            data = pd.read_csv(file_path, header=None, names=['q', 'win', 'bot_type'])
+            data = pd.read_csv(file_path, header=None, names=['q', 'win', 'bot_type', 't'])
             data["win"] = data["win"].astype(str).str.strip().str.lower() == "true"
 
             for _, row in data.iterrows():
@@ -76,6 +76,51 @@ class Result:
 
         print("\nWin/Loss Counts Table:")
         print(table_df.to_string(index=False))
+
+    @staticmethod
+    def analyzeTimeStepsVsQ(bot_types=None):
+        if bot_types is None:
+            bot_types = [1, 2, 3, 4]
+
+        folderName = 'variable-graph-result' if IS_VARIABLE_GRAPH else 'same-graph-result'
+        q_values = [i / 10 for i in range(11)]  # q values from 0.0 to 1.0
+
+        # Initialize data structure to store time steps for each bot and q value
+        time_data = {bot: {q: [] for q in q_values} for bot in bot_types}
+
+        # Read and process data for each bot
+        for bot in bot_types:
+            file_path = f"{os.getcwd()}/{folderName}/bot{bot}.txt"
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                continue
+
+            # Read CSV
+            data = pd.read_csv(file_path, header=None, names=['q', 'win', 'bot_type', 't'])
+            data["win"] = data["win"].astype(str).str.strip().str.lower() == "true"
+
+            # Filter winning cases and store time steps
+            for _, row in data.iterrows():
+                q = row['q']
+                win = row['win']
+                t = row['t']
+                if win and q in q_values:
+                    time_data[bot][q].append(t)
+
+        # Plot time steps vs q for each bot
+        plt.figure(figsize=(10, 6))
+        for bot in bot_types:
+            avg_time_steps = [sum(time_data[bot][q]) / len(time_data[bot][q]) if time_data[bot][q] else 0 for q in
+                              q_values]
+            plt.plot(q_values, avg_time_steps, marker='o', linestyle='-', label=f'Bot {bot}')
+
+        plt.xlabel("q Values", fontsize=12)
+        plt.ylabel("Average Time Steps (Winning Cases)", fontsize=12)
+        plt.title(f"{'Variable' if IS_VARIABLE_GRAPH else 'Constant'} Graph: Time Steps vs Q", fontsize=14)
+        plt.xticks(q_values)
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
     @staticmethod
     def botWiseAnalysis(botType):
@@ -189,16 +234,15 @@ class Result:
         target_count = max_count + num_records if max_count > 0 else num_records
 
         for bot in bots:
+            f = open(f"{folder}/bot{bot}.txt", "a")
             for q in q_values:
                 missing = target_count - existing_counts.get((bot, q), 0)
 
                 for _ in range(missing):
                     isUseIpCells = None if is_variable_graph else currently_open_1
                     g = auto_game(q=q, bot_type=bot, isUseIpCells=isUseIpCells)
-                    result = f"{g.q}, {g.isFireExtinguished}, {g.bot_type}\n"
-
+                    result = f"{g.q}, {g.isFireExtinguished}, {g.bot_type}, {g.t}\n"
                     # Append to file
-                    with open(f"{folder}/bot{bot}.txt", "a") as f:
-                        f.write(result)
+                    f.write(result)
 
         print(f"Data generation complete. Each bot now has {target_count} records per q.")
