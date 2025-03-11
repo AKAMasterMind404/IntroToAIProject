@@ -1,6 +1,6 @@
 import heapq
 
-def astar(graph, start, goal, heuristic):
+def astar(graph, start, target, heuristic):
     open_set = []
     heapq.heappush(open_set, (0, start))
 
@@ -9,26 +9,26 @@ def astar(graph, start, goal, heuristic):
     g_score[start] = 0
 
     f_score = {node: float('inf') for node in graph}
-    f_score[start] = heuristic(start, goal)
+    f_score[start] = heuristic(start, target)
 
     while open_set:
-        _, current = heapq.heappop(open_set)
+        _, curVal = heapq.heappop(open_set)
 
-        if current == goal:
+        if curVal == target:
             path = []
-            while current in came_from:
-                path.append(current)
-                current = came_from[current]
+            while curVal in came_from:
+                path.append(curVal)
+                curVal = came_from[curVal]
             path.append(start)
             return path[::-1]  # Return reversed path
 
-        for neighbor in graph[current]:
-            tentative_g_score = g_score[current] + graph[current][neighbor].get("weight", 1)
+        for neighbor in graph[curVal]:
+            temp_g_val = g_score[curVal] + graph[curVal][neighbor].get("weight", 1)
 
-            if tentative_g_score < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal)
+            if temp_g_val < g_score[neighbor]:
+                came_from[neighbor] = curVal
+                g_score[neighbor] = temp_g_val
+                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, target)
                 heapq.heappush(open_set, (f_score[neighbor], neighbor))
 
     return None

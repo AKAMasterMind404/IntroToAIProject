@@ -1,0 +1,20 @@
+from graph.winnability_sim import Simulation
+
+if __name__ == "__main__":
+    isGenerateData = False
+    if not isGenerateData:
+        isPlotBotSuccessRate = True
+        if isPlotBotSuccessRate:
+            # List of bot data files
+            bot_files = ["bot1.txt", "bot2.txt", "bot3.txt", "bot4.txt"]
+            bot_success_rates = Simulation.compute_winnability_per_bot(bot_files)
+            Simulation.plot_bot_success_rates(bot_success_rates)
+        else:
+            data = Simulation.getStoredData()
+            winnability_frequency = Simulation.compute_winnability_frequency(data)
+            Simulation.plot_winnability_frequency(winnability_frequency)
+    else:
+        recordsToFill = 5
+        data = Simulation.generate_uniform_data_winnability(recordsToFill)
+
+    print("Data gen finished....")

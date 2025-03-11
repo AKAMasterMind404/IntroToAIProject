@@ -2,16 +2,16 @@ import networkx as nx
 
 
 def compatibleGraph(graph: list) -> dict:
-    newGraph = dict()
+    adjacencyList = dict()
 
     for node, neighbors in graph:
-        newGraph[node] = []  # Initialize adjacency list for this node
+        adjacencyList[node] = []
 
         for neighbor, attr in neighbors.items():
             weight = attr.get('weight', 1)  # Default weight is 1 if not specified
-            newGraph[node].append({'node': neighbor, 'dist': weight})
+            adjacencyList[node].append({'node': neighbor, 'dist': weight})
 
-    return newGraph
+    return adjacencyList
 
 
 def _findDistanceFromNode1ToNode2(graph: dict, node1: tuple, node2: tuple):

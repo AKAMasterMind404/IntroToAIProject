@@ -33,6 +33,8 @@ def draw_grid(screen, game, n):
                 color = cnt.RED
             if node in game.currently_open and (node not in game.dead_ends and game.step < 3):
                 color = cnt.GREEN
+            if node in game.fire_forecast or node in game.adj_fire_forecast:
+                color = cnt.PURPLE
             if node in (game.path or game.beenTo):
                 color = cnt.YELLOW
             if node in game.fire_nodes:
@@ -41,8 +43,6 @@ def draw_grid(screen, game, n):
                 color = cnt.BLUE
             if node == game.curr_button_pos:
                 color = cnt.GRAY
-            if node in game.fire_forecast or node in game.adj_fire_forecast:
-                color = cnt.PURPLE
             pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
             pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
 

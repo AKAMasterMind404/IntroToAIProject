@@ -1,9 +1,11 @@
-IS_VARIABLE_GRAPH = True
-ALPHA = 0.2
+IS_VARIABLE_GRAPH = False
+ALPHA = 0.8
 K_DEBUG_MODE = False
-CURRENT_BOT = 4 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
-FLAMABILITY = 0.7 # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
-TIME_RATE = 0.4 # SECONDS OF WAIT BETWEEN EACH T
+CURRENT_BOT = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
+FLAMMABILITY = 0.1 # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
+TIME_RATE = 0 # SECONDS OF WAIT BETWEEN EACH T
+
+CURR_SAMPLE_SET = 1
 
 GRID_SIZE = 40  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
