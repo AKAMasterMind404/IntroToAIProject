@@ -7,25 +7,39 @@ from game.auto_game import auto_game
 class Simulation:
     @staticmethod
     def generate_uniform_data_winnability(num_records):
+        """
+        Generates data for all bots and tracks winnability.
+
+        Args:
+            num_records (int): Number of simulations to run for each q.
+
+        Returns:
+            dict: A dictionary mapping q to a list of tuples (bot, result).
+        """
         folder = "winnability-result"
         os.makedirs(folder, exist_ok=True)
         winnability_data = defaultdict(list)
 
-        for bot in (1, 2, 3, 4):
-            file_path = os.path.join(folder, f"bot{bot}.txt")
-            f = open(file_path, "a+")
-            for q in range(0, 10, 1):
-                _q = q / 10
-                wins = 0
-                for _ in range(num_records):
+        for q in range(0, 10, 1):
+            _q = q / 10
+            for _ in range(num_records):
+                # Track results for all bots in the same simulation
+                results = {}
+                for bot in (1, 2, 3, 4):
                     game = auto_game(_q, bot, isUseIpCells=True, isUsePresetPos=True)
-                    result = game.isFireExtinguished  # Boolean
+                    results[bot] = game.isFireExtinguished
 
-                    if result:
-                        wins += 1
+                # Determine if the simulation is winnable
+                is_winnable = any(results.values())
 
-                    f.write(f"{_q}, {result}, Bot{bot}\n")
-                    winnability_data[_q].append(result)
+                # Write results to files
+                for bot, result in results.items():
+                    file_path = os.path.join(folder, f"bot{bot}.txt")
+                    with open(file_path, "a+") as f:
+                        f.write(f"{_q}, {is_winnable}, Bot{bot}\n")
+
+                # Store data for winnability analysis
+                winnability_data[_q].append(is_winnable)
 
         return winnability_data
 
@@ -33,7 +47,7 @@ class Simulation:
     def getStoredData():
         """Reads previously stored winnability data from files."""
         folder = "winnability-result"
-        winnability_data = defaultdict(list)  # {q: [wins]}
+        winnability_data = defaultdict(list)  # {q: [is_winnable]}
 
         if not os.path.exists(folder):
             print("No stored data found.")
@@ -47,31 +61,46 @@ class Simulation:
 
             with open(file_path, "r") as f:
                 for line in f:
-                    q, win, _ = line.strip().split(", ")
+                    q, is_winnable, bot_name = line.strip().split(", ")
                     q = float(q)
-                    win = win == "True"  # Convert string to Boolean
-                    winnability_data[q].append(win)
+                    is_winnable = is_winnable == "True"
+                    winnability_data[q].append(is_winnable)
 
         return winnability_data
 
     @staticmethod
-    def compute_winnability(data):
-        """Computes the winnability percentage for each q."""
-        q_values = sorted(data.keys())
-        winnability = {q: sum(data[q]) / len(data[q]) for q in q_values}  # % of wins
-        return q_values, [winnability[q] for q in q_values]
+    def compute_winnability_frequency(winnability_data):
+        """
+        Computes the frequency of winnable simulations as a function of q.
+
+        Args:
+            winnability_data (dict): A dictionary mapping q to a list of is_winnable values.
+
+        Returns:
+            dict: A dictionary mapping q to the frequency of winnable simulations.
+        """
+        winnability_frequency = {}
+        for q, is_winnable_list in winnability_data.items():
+            winnability_frequency[q] = sum(is_winnable_list) / len(is_winnable_list)
+        return winnability_frequency
 
     @staticmethod
-    def plot_winnability(winnability_data):
-        """Plots winnability as a function of q."""
-        q_values, winnability = Simulation.compute_winnability(winnability_data)
+    def plot_winnability_frequency(winnability_frequency):
+        """
+        Plots the frequency of winnable simulations as a function of q.
+
+        Args:
+            winnability_frequency (dict): A dictionary mapping q to the frequency of winnable simulations.
+        """
+        q_values = sorted(winnability_frequency.keys())
+        frequencies = [winnability_frequency[q] for q in q_values]
 
         plt.figure(figsize=(10, 5))
-        plt.plot(q_values, winnability, marker="o", linestyle="-", label="Winnability")
+        plt.plot(q_values, frequencies, marker="o", linestyle="-", label="Winnability Frequency")
 
         plt.xlabel("Fire Spread Probability (q)")
-        plt.ylabel("Winnability (%)")
-        plt.title("Effect of Fire Spread Rate on Winnability")
+        plt.ylabel("Frequency of Winnable Simulations")
+        plt.title("Frequency of Winnable Simulations as a Function of q")
         plt.legend()
         plt.grid()
         plt.show()
@@ -85,14 +114,14 @@ class Simulation:
             file_path (str): Path to the bot data file.
 
         Returns:
-            list: A list of tuples (q, winnable, bot).
+            list: A list of tuples (q, is_winnable, bot).
         """
         data = []
         fullPath = os.path.join(os.getcwd(), "winnability-result", file_path)
-        file = open(fullPath, "r")
-        for line in file:
-            q, winnable, bot = line.strip().split(", ")
-            data.append((float(q), winnable == "True", bot))
+        with open(fullPath, "r") as file:
+            for line in file:
+                q, is_winnable, bot = line.strip().split(", ")
+                data.append((float(q), is_winnable == "True", bot))
         return data
 
     @staticmethod
@@ -115,8 +144,8 @@ class Simulation:
             all_data.extend(Simulation.read_bot_data(file_path))
 
         # Process data
-        for q, winnable, bot in all_data:
-            if winnable:  # Only consider winnable simulations
+        for q, is_winnable, bot in all_data:
+            if is_winnable:  # Only consider winnable simulations
                 winnable_counts[q] += 1
                 bot_success_rates[bot][q] += 1
 
@@ -124,6 +153,11 @@ class Simulation:
         for bot in bot_success_rates:
             for q in bot_success_rates[bot]:
                 bot_success_rates[bot][q] /= winnable_counts[q]
+
+        # Debug: Print bot success rates
+        print("Bot Success Rates:")
+        for bot, success_rates in bot_success_rates.items():
+            print(f"{bot}: {success_rates}")
 
         return bot_success_rates
 
@@ -144,9 +178,14 @@ class Simulation:
             if rates:  # Only plot if data exists
                 plt.plot(q_values, rates, marker="o", linestyle="-", label=f"{bot}")
 
+        # Check if any data was plotted
+        if plt.gca().has_data():
+            plt.legend()
+        else:
+            print("Warning: No data to plot.")
+
         plt.xlabel("Fire Spread Probability (q)")
         plt.ylabel("Win Rate Among Winnable Simulations")
         plt.title("Bot Performance in Winnable Simulations")
-        plt.legend()
         plt.grid()
         plt.show()
