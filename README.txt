@@ -1,4 +1,6 @@
 ### Welcome to the Project - The Bot is on Fire ###
+Access the repo at:
+https://github.com/AKAMasterMind404/IntroToAIProject
 
 The project has been made by:
 Atharv Karbhari - NetId (amk546)
