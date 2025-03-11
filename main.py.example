@@ -1,19 +1,24 @@
 from game.ui_game import ui_game
-from game.winnability import winnability
 from analysis import Result
 import constants as cnt
 
 if __name__ == "__main__":
-    IS_DATA = False
+    IS_DATA = True
     if IS_DATA:
-        isPlot = True
-        if isPlot:
-            Result.analyze_all_bots()
+        isGenerateData = False
+        isGenerateBotVSQ = True
+
+        if not isGenerateData:
+            if isGenerateBotVSQ:
+                Result.analyzeTimeStepsVsQ()
+            else:
+                Result.analyzeBotWinVsQ()
         else:
             print("Data gen started....")
             recordsToFill = 100
             Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
             print("Data gen finished....")
     else:
-        g = ui_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT)
-        winnability()
+        # g = auto_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT, isUseIpCells=True)
+        g = ui_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT, isUseIpCells=True, isUsePresetPos=True)
+        print(g.isFireExtinguished)
