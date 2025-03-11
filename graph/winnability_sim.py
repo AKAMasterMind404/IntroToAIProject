@@ -26,7 +26,7 @@ class Simulation:
                 # Track results for all bots in the same simulation
                 results = {}
                 for bot in (1, 2, 3, 4):
-                    game = auto_game(_q, bot, isUseIpCells=True, isUsePresetPos=True)
+                    game = auto_game(_q, bot, isUseIpCells=False, isUsePresetPos=False)
                     results[bot] = game.isFireExtinguished
 
                 # Determine if the simulation is winnable

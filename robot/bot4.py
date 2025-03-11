@@ -46,7 +46,7 @@ class Bot4(Robot):
     def fire_aware_heuristic(self, node1, node2):
         distance = abs(node1[0] - node2[0]) + abs(node1[1] - node2[1])  # Manhattan distance
         fire_danger = self.calculateDanger(node1)
-        return distance + cnt.ALPHA*fire_danger
+        return distance - cnt.ALPHA*fire_danger
 
     def calculateDanger(self, cell: tuple):
         graph = self.graph
