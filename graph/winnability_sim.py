@@ -8,25 +8,24 @@ class Simulation:
     @staticmethod
     def generate_uniform_data_winnability(num_records):
         folder = "winnability-result"
-        os.makedirs(folder, exist_ok=True)  # Ensure the output folder exists
-        winnability_data = defaultdict(list)  # {q: [wins]}
+        os.makedirs(folder, exist_ok=True)
+        winnability_data = defaultdict(list)
 
         for bot in (1, 2, 3, 4):
             file_path = os.path.join(folder, f"bot{bot}.txt")
-            with open(file_path, "a+") as f:
-                for q in range(0, 10, 1):
-                    _q = q / 10  # Convert q to decimal (0.0 to 0.9)
+            f = open(file_path, "a+")
+            for q in range(0, 10, 1):
+                _q = q / 10
+                wins = 0
+                for _ in range(num_records):
+                    game = auto_game(_q, bot, isUseIpCells=True, isUsePresetPos=True)
+                    result = game.isFireExtinguished  # Boolean
 
-                    wins = 0
-                    for _ in range(num_records):  # Run multiple trials per q
-                        game = auto_game(_q, bot, isUseIpCells=True, isUsePresetPos=True)
-                        result = game.isFireExtinguished  # Boolean
+                    if result:
+                        wins += 1
 
-                        if result:
-                            wins += 1
-
-                        f.write(f"{_q}, {result}, Bot{bot}\n")
-                        winnability_data[_q].append(result)
+                    f.write(f"{_q}, {result}, Bot{bot}\n")
+                    winnability_data[_q].append(result)
 
         return winnability_data
 
@@ -73,6 +72,81 @@ class Simulation:
         plt.xlabel("Fire Spread Probability (q)")
         plt.ylabel("Winnability (%)")
         plt.title("Effect of Fire Spread Rate on Winnability")
+        plt.legend()
+        plt.grid()
+        plt.show()
+
+    @staticmethod
+    def read_bot_data(file_path):
+        """
+        Reads bot data from a file.
+
+        Args:
+            file_path (str): Path to the bot data file.
+
+        Returns:
+            list: A list of tuples (q, winnable, bot).
+        """
+        data = []
+        fullPath = os.path.join(os.getcwd(), "winnability-result", file_path)
+        file = open(fullPath, "r")
+        for line in file:
+            q, winnable, bot = line.strip().split(", ")
+            data.append((float(q), winnable == "True", bot))
+        return data
+
+    @staticmethod
+    def compute_winnability_per_bot(bot_files):
+        """
+        Computes per-bot win frequency, considering only winnable simulations.
+
+        Args:
+            bot_files (list): List of file paths for bot data.
+
+        Returns:
+            dict: A dictionary mapping bot IDs to their success rates per q.
+        """
+        winnable_counts = defaultdict(int)  # {q: total winnable cases}
+        bot_success_rates = defaultdict(lambda: defaultdict(float))  # {bot: {q: success rate}}
+
+        # Read data from all files
+        all_data = []
+        for file_path in bot_files:
+            all_data.extend(Simulation.read_bot_data(file_path))
+
+        # Process data
+        for q, winnable, bot in all_data:
+            if winnable:  # Only consider winnable simulations
+                winnable_counts[q] += 1
+                bot_success_rates[bot][q] += 1
+
+        # Normalize by total winnable simulations for each q
+        for bot in bot_success_rates:
+            for q in bot_success_rates[bot]:
+                bot_success_rates[bot][q] /= winnable_counts[q]
+
+        return bot_success_rates
+
+    @staticmethod
+    def plot_bot_success_rates(bot_success_rates):
+        """
+        Plots each bot's success rate in winnable simulations.
+
+        Args:
+            bot_success_rates (dict): A dictionary mapping bot IDs to their success rates per q.
+        """
+        plt.figure(figsize=(10, 5))
+
+        for bot, success_rates in bot_success_rates.items():
+            q_values = sorted(success_rates.keys())
+            rates = [success_rates[q] for q in q_values]
+
+            if rates:  # Only plot if data exists
+                plt.plot(q_values, rates, marker="o", linestyle="-", label=f"{bot}")
+
+        plt.xlabel("Fire Spread Probability (q)")
+        plt.ylabel("Win Rate Among Winnable Simulations")
+        plt.title("Bot Performance in Winnable Simulations")
         plt.legend()
         plt.grid()
         plt.show()

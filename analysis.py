@@ -179,7 +179,7 @@ class Result:
         folder = "variable-graph-result" if is_variable_graph else "same-graph-result"
         existing_counts = Result.get_existing_counts(is_variable_graph)
 
-        q_values = [round(i * 0.1, 1) for i in range(1, 11)]  # 0.1 to 1.0
+        q_values = [round(i * 0.1, 1) for i in range(0, 11)]  # 0.1 to 1.0
         bots = [1, 2, 3, 4]
 
         # Determine max existing count for any (bot, q) pair
