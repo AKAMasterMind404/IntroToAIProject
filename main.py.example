@@ -1,24 +1,19 @@
 from game.ui_game import ui_game
-from analysis import Result
+from dataGenAndPlotGeneral import Result
 import constants as cnt
 
 if __name__ == "__main__":
-    IS_DATA = True
-    # IS_DATA Block is responsible for ata generation or Plotting
-    if IS_DATA:
-        isGenerateData = False
-        isGenerateBotVSQ = True
+    isGenerateData = False
+    isPlotData = True
 
-        if not isGenerateData:
-            if isGenerateBotVSQ:
-                Result.analyzeTimeStepsVsQ()
-            else:
-                Result.analyzeBotWinVsQ()
-        else:
-            print("Data gen started....")
-            recordsToFill = 100
-            Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
-            print("Data gen finished....")
+    if isPlotData:
+        Result.analyzeTimeStepsVsQ()
+        Result.analyzeBotWinVsQ()
+        print("Data gen started....")
+    elif isGenerateData:
+        recordsToFill = 100
+        Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
+        print("Data gen finished....")
     else:
         # You can choose to start an automatic simulation or a UI simulation
         # isUseIpCells if set to True, shall use a pre-defined set of graph
